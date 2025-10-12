@@ -1,0 +1,127 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    background: #000;
+    color: #fff;
+    overflow: hidden;
+    touch-action: none;
+}
+
+#gameContainer {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#gameCanvas {
+    display: block;
+    background: #0a0a1a;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 10;
+    text-align: center;
+    padding: 20px;
+}
+
+.screen.active {
+    display: flex;
+}
+
+.screen h1 {
+    font-size: 3rem;
+    color: #00ff00;
+    text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00;
+    margin-bottom: 20px;
+    letter-spacing: 4px;
+}
+
+.screen p {
+    font-size: 1.5rem;
+    margin: 10px 0;
+    color: #00ff88;
+}
+
+.screen .instructions {
+    font-size: 1rem;
+    color: #888;
+    margin-top: 30px;
+}
+
+.screen .restart {
+    color: #00ff88;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+#hud {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    display: none;
+    justify-content: space-between;
+    z-index: 5;
+    font-size: 1.2rem;
+    color: #00ff00;
+    text-shadow: 0 0 5px #000, 2px 2px 0 #000;
+    pointer-events: none;
+}
+
+#hud.active {
+    display: flex;
+}
+
+#score {
+    text-align: left;
+}
+
+#health {
+    text-align: right;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+@media (max-width: 768px) {
+    .screen h1 {
+        font-size: 2rem;
+    }
+    
+    .screen p {
+        font-size: 1.2rem;
+    }
+    
+    #hud {
+        font-size: 1rem;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+    }
+}
