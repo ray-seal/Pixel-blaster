@@ -791,7 +791,9 @@ function drawActiveEffects() {
 
 function updateHUD() {
     scoreDisplay.textContent = `Score: ${Math.floor(score)}`;
-    healthDisplay.textContent = `Health: ${'❤'.repeat(player.health)}${'🖤'.repeat(player.maxHealth - player.health)}`;
+    // Handle cases where health exceeds maxHealth (e.g., from EXTRA_LIFE loot)
+    const emptyHearts = Math.max(0, player.maxHealth - player.health);
+    healthDisplay.textContent = `Health: ${'❤'.repeat(player.health)}${'🖤'.repeat(emptyHearts)}`;
 }
 
 /**
