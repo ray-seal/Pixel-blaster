@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="Pixel Blaster - A retro side-scrolling space shooter game">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <title>Pixel Blaster</title>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="menu" class="screen active">
+            <h1>PIXEL BLASTER</h1>
+            <p>Tap to start</p>
+            <p class="instructions">Tap/Click to thrust up<br>Hold to shoot</p>
+        </div>
+        <div id="gameOver" class="screen">
+            <h1>GAME OVER</h1>
+            <p id="finalScore">Score: 0</p>
+            <p id="highScore">High Score: 0</p>
+            <p class="restart">Tap to restart</p>
+        </div>
+        <div id="hud">
+            <div id="score">Score: 0</div>
+            <div id="health">Health: ❤❤❤</div>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
