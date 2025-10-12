@@ -24,6 +24,9 @@ let highScore = localStorage.getItem('highScore') || 0;
 let gameSpeed = 2;
 let distanceTraveled = 0;
 
+// Progressive difficulty system
+let enemySpawnRate = 0.005; // Start with fewer enemies (0.5% chance per frame)
+
 // Delta time tracking for consistent game speed across devices
 let lastFrameTime = 0;
 let deltaTime = 0;
@@ -189,6 +192,7 @@ function startGame() {
     score = 0;
     distanceTraveled = 0;
     gameSpeed = 2;
+    enemySpawnRate = 0.005; // Reset to easy difficulty
     player.x = 100;
     player.y = canvas.height / 2;
     player.velocityY = 0;
@@ -463,8 +467,9 @@ function updateTunnels() {
 }
 
 function updateEnemies() {
-    // Spawn enemies
-    if (Math.random() < 0.02) {
+    // Progressive enemy spawning - starts easy and gradually increases
+    // Spawn rate increases from 0.5% to 2.5% as player progresses
+    if (Math.random() < enemySpawnRate) {
         enemies.push(createEnemy());
     }
     
@@ -592,9 +597,13 @@ function updateScore() {
     distanceTraveled += gameSpeed * deltaTime;
     score += 0.1 * deltaTime; // Gradual score increase for distance (scaled by delta time)
     
-    // Gradually increase difficulty
+    // Progressive difficulty system - gradually increase game speed and enemy spawn rate
+    // Every 1000 units of distance traveled:
+    // - Game speed increases by 0.1 (capped at 5)
+    // - Enemy spawn rate increases by 0.0025 (capped at 0.025 for max 2.5% spawn chance)
     if (distanceTraveled % 1000 < gameSpeed * deltaTime) {
         gameSpeed = Math.min(gameSpeed + 0.1, 5);
+        enemySpawnRate = Math.min(enemySpawnRate + 0.0025, 0.025);
     }
 }
 

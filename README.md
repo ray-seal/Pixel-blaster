@@ -27,7 +27,10 @@ Pixel Blaster is a progressive web app (PWA) game that combines the mechanics of
   - Loot drops have distinct shapes (circles for beneficial, squares for challenging) and colors
   - Active effects display with countdown timers on screen
   - 20% chance to drop loot when defeating enemies
-- **Progressive difficulty**: Game speed increases as you progress
+- **Progressive difficulty**: Game speed and enemy spawn rate increase as you progress
+  - Starts with fewer enemies (0.5% spawn chance per frame)
+  - Every 1000 distance units: spawn rate increases by 0.25% and game speed by 0.1
+  - Spawn rate caps at 2.5% and speed caps at 5 for balanced gameplay
 - **Health system**: Three lives to survive as long as possible
 - **High score tracking**: Local storage saves your best score
 - **PWA support**: Install on mobile devices for offline play
@@ -101,6 +104,24 @@ Implementation details:
 - `deltaTime` variable tracks time multiplier relative to target frame rate
 - All velocity, position, rotation, and timer updates multiply by `deltaTime`
 - `lastFrameTime` tracks previous frame timestamp for delta calculation
+
+### Progressive Difficulty System
+
+The game implements a progressive difficulty system to ensure an easy start with gradual challenge increase:
+
+- **Initial difficulty**: Game starts with low enemy spawn rate (0.5% chance per frame) and base game speed (2)
+- **Difficulty scaling**: Every 1000 distance units traveled:
+  - Enemy spawn rate increases by 0.25 percentage points
+  - Game speed increases by 0.1
+- **Difficulty caps**: 
+  - Enemy spawn rate maxes at 2.5% to prevent overwhelming the player
+  - Game speed maxes at 5 for manageable gameplay
+- **Reset on restart**: Both spawn rate and speed reset to initial values when starting a new game
+
+This system ensures:
+- New players can learn the game mechanics without being overwhelmed
+- Experienced players face increasing challenges as they progress
+- The game maintains a balanced difficulty curve throughout gameplay
 
 ### Adding New Loot Types
 
