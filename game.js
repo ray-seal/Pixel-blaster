@@ -109,6 +109,23 @@ const LOOT_TYPES = {
             player.bigEnemyMode = false;
         }
     },
+    EXTRA_LIFE: {
+        id: 'extra_life',
+        name: 'Extra Life',
+        color: '#00ff00',
+        shape: 'circle',
+        duration: 0, // Instant effect
+        type: 'beneficial',
+        apply: () => {
+            // Grant one additional life (capped at maxHealth)
+            if (player.health < player.maxHealth) {
+                player.health++;
+            }
+        },
+        remove: () => {
+            // No removal needed for instant effect
+        }
+    },
     RANDOM_OBSTACLES: {
         id: 'random_obstacles',
         name: 'Random Obstacles',

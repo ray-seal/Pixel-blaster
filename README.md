@@ -21,6 +21,7 @@ Pixel Blaster is a progressive web app (PWA) game that combines the mechanics of
   - **Beneficial Effects**:
     - 🔵 **Double Shot** (8s): Fire three bullets at once for massive firepower
     - 🟣 **Big Enemy Spawner** (10s): Spawn larger enemies worth 3x points (150 vs 50)
+    - 🟢 **Extra Life**: Gain one additional life (instant effect, capped at max health)
   - **Challenging Effects**:
     - 🟠 **Random Obstacles** (8s): Dodge randomly spawning hazardous obstacles
     - 🔴 **Shrink Ship** (6s): Your ship shrinks to 60% size, harder to maneuver
