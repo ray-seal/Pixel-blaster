@@ -266,6 +266,7 @@ function startGame() {
 function gameOver() {
     gameState = 'gameOver';
     hud.classList.remove('active');
+    perkButtonsContainer.classList.remove('active');
     gameOverScreen.classList.add('active');
     finalScoreDisplay.textContent = `Score: ${Math.floor(score)}`;
     
