@@ -821,6 +821,66 @@ function gameLoop(timestamp) {
 // Start game loop
 gameLoop();
 
+/**
+ * Renders loot type icons in the legend on the menu screen
+ */
+function renderLootLegendIcons() {
+    const icons = document.querySelectorAll('.loot-icon');
+    
+    icons.forEach(canvas => {
+        const lootKey = canvas.getAttribute('data-loot');
+        const lootType = LOOT_TYPES[lootKey];
+        
+        if (!lootType) return;
+        
+        const ctx = canvas.getContext('2d');
+        const size = 30;
+        canvas.width = size;
+        canvas.height = size;
+        
+        const centerX = size / 2;
+        const centerY = size / 2;
+        const iconSize = 20;
+        
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        
+        // Draw based on shape (matching in-game appearance)
+        if (lootType.shape === 'circle') {
+            // Draw circle
+            ctx.fillStyle = lootType.color;
+            ctx.beginPath();
+            ctx.arc(0, 0, iconSize / 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add glow effect
+            ctx.strokeStyle = lootType.color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(0, 0, iconSize / 2 + 2, 0, Math.PI * 2);
+            ctx.stroke();
+        } else {
+            // Draw square
+            ctx.fillStyle = lootType.color;
+            ctx.fillRect(-iconSize / 2, -iconSize / 2, iconSize, iconSize);
+            
+            // Add border
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(-iconSize / 2, -iconSize / 2, iconSize, iconSize);
+        }
+        
+        // Add sparkle
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(-1, -1, 2, 2);
+        
+        ctx.restore();
+    });
+}
+
+// Render loot icons when page loads
+renderLootLegendIcons();
+
 // Service worker registration
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {

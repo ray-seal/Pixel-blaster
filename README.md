@@ -11,11 +11,13 @@ Pixel Blaster is a progressive web app (PWA) game that combines the mechanics of
 - **Side-scrolling gameplay**: Endless runner style with increasing difficulty
 - **Simple controls**: Tap/click to thrust up and shoot
 - **Pixel art graphics**: Retro-style visuals with smooth animations
+- **Consistent game speed**: Delta time system ensures smooth gameplay at any frame rate on Android, iPhone, and all devices
 - **Scoring system**: 
   - Points increase gradually based on distance traveled
   - Bonus points (50) for destroying alien ships, (150) for big enemies
   - Pass through tunnels for additional points (10)
 - **Loot Drop System**: Random enemies drop power-ups with temporary effects
+  - **Interactive Legend**: Menu screen displays all loot types with visual icons and descriptions
   - **Beneficial Effects**:
     - 🔵 **Double Shot** (8s): Fire three bullets at once for massive firepower
     - 🟣 **Big Enemy Spawner** (10s): Spawn larger enemies worth 3x points (150 vs 50)
@@ -35,12 +37,13 @@ Pixel Blaster is a progressive web app (PWA) game that combines the mechanics of
 
 1. Open `index.html` in a modern web browser
 2. Tap or click anywhere to start the game
-3. Tap/hold to make your ship thrust upward
-4. Your ship automatically shoots while holding
-5. Avoid hitting the tunnels (top and bottom obstacles)
-6. Destroy alien ships for bonus points
-7. Collect loot drops (colorful rotating shapes) for power-ups
-8. Try to survive as long as possible and achieve the highest score!
+3. Review the **Loot Drops Legend** on the menu screen to learn about power-ups
+4. Tap/hold to make your ship thrust upward
+5. Your ship automatically shoots while holding
+6. Avoid hitting the tunnels (top and bottom obstacles)
+7. Destroy alien ships for bonus points
+8. Collect loot drops (colorful rotating shapes) for power-ups
+9. Try to survive as long as possible and achieve the highest score!
 
 ### Loot System Tips
 
@@ -49,6 +52,7 @@ Pixel Blaster is a progressive web app (PWA) game that combines the mechanics of
 - Active effects show in the top-left with countdown timers
 - Effects can be refreshed by collecting the same loot type again
 - Big enemies (when spawned) are worth 3x more points but are harder to avoid
+- Check the legend on the menu screen for details on each loot type
 
 ## Controls
 
@@ -83,6 +87,21 @@ To modify the game:
 2. Edit `style.css` for visual styling
 3. Edit `index.html` for structure
 
+### Delta Time System
+
+The game uses a delta time system to ensure consistent gameplay speed across all devices, regardless of screen refresh rate or device performance:
+
+- **Time-based movement**: All movements, animations, and timers are scaled by delta time
+- **60 FPS baseline**: Delta time is normalized to a 60 FPS target (16.67ms per frame)
+- **Frame rate independent**: Game runs at the same logical speed whether at 30 FPS, 60 FPS, 120 FPS, or variable frame rates
+- **Cross-platform consistency**: Ensures identical gameplay experience on Android, iPhone, and desktop
+- **Performance handling**: Caps delta time at 3x to prevent huge jumps when tabs lose/regain focus
+
+Implementation details:
+- `deltaTime` variable tracks time multiplier relative to target frame rate
+- All velocity, position, rotation, and timer updates multiply by `deltaTime`
+- `lastFrameTime` tracks previous frame timestamp for delta calculation
+
 ### Adding New Loot Types
 
 The loot system is designed to be extensible. To add a new loot type:
@@ -107,9 +126,20 @@ NEW_LOOT: {
 }
 ```
 
-2. Add any necessary player properties or game state variables
-3. Implement the effect logic in the appropriate game functions
-4. The loot will automatically appear in the random drop pool
+2. Add a corresponding legend item in `index.html` in the loot legend section:
+```html
+<div class="legend-item">
+    <canvas class="loot-icon" data-loot="NEW_LOOT"></canvas>
+    <div class="loot-info">
+        <span class="loot-name">Display Name</span>
+        <span class="loot-desc">Brief description of effect (duration)</span>
+    </div>
+</div>
+```
+
+3. Add any necessary player properties or game state variables
+4. Implement the effect logic in the appropriate game functions
+5. The loot will automatically appear in the random drop pool and legend icons will render automatically
 
 ### Loot System Architecture
 
@@ -121,6 +151,7 @@ NEW_LOOT: {
 - **updateLootEffects()**: Manages effect timers and removal
 - **drawLootDrops()**: Renders loot with visual distinction
 - **drawActiveEffects()**: Shows active effect indicators with countdown
+- **renderLootLegendIcons()**: Renders loot type icons on menu screen legend
 
 ## License
 
