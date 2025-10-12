@@ -24,6 +24,12 @@ let highScore = localStorage.getItem('highScore') || 0;
 let gameSpeed = 2;
 let distanceTraveled = 0;
 
+// Delta time tracking for consistent game speed across devices
+let lastFrameTime = 0;
+let deltaTime = 0;
+const TARGET_FPS = 60;
+const TARGET_FRAME_TIME = 1000 / TARGET_FPS; // 16.67ms per frame at 60 FPS
+
 // Player
 const player = {
     x: 100,
@@ -201,6 +207,7 @@ function startGame() {
     obstacles = [];
     activeEffects = [];
     nextTunnelX = canvas.width;
+    lastFrameTime = 0; // Reset delta time tracking
     
     menuScreen.classList.remove('active');
     gameOverScreen.classList.remove('active');
@@ -341,8 +348,8 @@ function updateLootEffects() {
 function updateLootDrops() {
     for (let i = lootDrops.length - 1; i >= 0; i--) {
         const loot = lootDrops[i];
-        loot.x -= loot.speed;
-        loot.rotation += 0.05; // Rotate for visual effect
+        loot.x -= loot.speed * deltaTime;
+        loot.rotation += 0.05 * deltaTime; // Rotate for visual effect (scaled by delta time)
         
         // Remove off-screen loot
         if (loot.x + loot.width < 0) {
@@ -374,10 +381,10 @@ function updateObstacles() {
         obstacles.push(createObstacle());
     }
     
-    // Update and remove obstacles
+    // Update and remove obstacles (movement scaled by delta time)
     for (let i = obstacles.length - 1; i >= 0; i--) {
         const obstacle = obstacles[i];
-        obstacle.x -= obstacle.speed;
+        obstacle.x -= obstacle.speed * deltaTime;
         
         // Remove off-screen obstacles
         if (obstacle.x + obstacle.width < 0) {
@@ -392,9 +399,9 @@ function updatePlayer() {
         player.velocityY = player.thrust;
     }
     
-    // Apply gravity
-    player.velocityY += player.gravity;
-    player.y += player.velocityY;
+    // Apply gravity (scaled by delta time for consistent physics)
+    player.velocityY += player.gravity * deltaTime;
+    player.y += player.velocityY * deltaTime;
     
     // Screen boundaries
     if (player.y < 0) {
@@ -407,7 +414,7 @@ function updatePlayer() {
         takeDamage();
     }
     
-    // Shooting
+    // Shooting (cooldown scaled by delta time)
     if (isShooting && player.shootCooldown <= 0) {
         bullets.push(createBullet());
         
@@ -426,7 +433,7 @@ function updatePlayer() {
         player.shootCooldown = 15;
     }
     if (player.shootCooldown > 0) {
-        player.shootCooldown--;
+        player.shootCooldown -= deltaTime;
     }
 }
 
@@ -437,10 +444,10 @@ function updateTunnels() {
         nextTunnelX += 250;
     }
     
-    // Update and remove tunnels
+    // Update and remove tunnels (movement scaled by delta time)
     for (let i = tunnels.length - 1; i >= 0; i--) {
         const tunnel = tunnels[i];
-        tunnel.x -= gameSpeed;
+        tunnel.x -= gameSpeed * deltaTime;
         
         // Check if player passed tunnel
         if (!tunnel.passed && player.x > tunnel.x + tunnel.width) {
@@ -461,10 +468,10 @@ function updateEnemies() {
         enemies.push(createEnemy());
     }
     
-    // Update enemies
+    // Update enemies (movement scaled by delta time)
     for (let i = enemies.length - 1; i >= 0; i--) {
         const enemy = enemies[i];
-        enemy.x -= enemy.speed;
+        enemy.x -= enemy.speed * deltaTime;
         
         // Remove off-screen enemies
         if (enemy.x + enemy.width < 0) {
@@ -476,7 +483,7 @@ function updateEnemies() {
 function updateBullets() {
     for (let i = bullets.length - 1; i >= 0; i--) {
         const bullet = bullets[i];
-        bullet.x += bullet.speed;
+        bullet.x += bullet.speed * deltaTime;
         
         // Remove off-screen bullets
         if (bullet.x > canvas.width) {
@@ -488,9 +495,9 @@ function updateBullets() {
 function updateParticles() {
     for (let i = particles.length - 1; i >= 0; i--) {
         const particle = particles[i];
-        particle.x += particle.vx;
-        particle.y += particle.vy;
-        particle.life--;
+        particle.x += particle.vx * deltaTime;
+        particle.y += particle.vy * deltaTime;
+        particle.life -= deltaTime;
         
         if (particle.life <= 0) {
             particles.splice(i, 1);
@@ -582,11 +589,11 @@ function takeDamage() {
 }
 
 function updateScore() {
-    distanceTraveled += gameSpeed;
-    score += 0.1; // Gradual score increase for distance
+    distanceTraveled += gameSpeed * deltaTime;
+    score += 0.1 * deltaTime; // Gradual score increase for distance (scaled by delta time)
     
     // Gradually increase difficulty
-    if (distanceTraveled % 1000 < gameSpeed) {
+    if (distanceTraveled % 1000 < gameSpeed * deltaTime) {
         gameSpeed = Math.min(gameSpeed + 0.1, 5);
     }
 }
@@ -757,7 +764,25 @@ function updateHUD() {
     healthDisplay.textContent = `Health: ${'❤'.repeat(player.health)}${'🖤'.repeat(player.maxHealth - player.health)}`;
 }
 
-function gameLoop() {
+/**
+ * Main game loop with delta time for consistent speed across devices
+ * @param {number} timestamp - Current timestamp from requestAnimationFrame
+ */
+function gameLoop(timestamp) {
+    // Calculate delta time (time since last frame)
+    if (lastFrameTime === 0) {
+        lastFrameTime = timestamp;
+    }
+    const frameTime = timestamp - lastFrameTime;
+    lastFrameTime = timestamp;
+    
+    // Calculate delta multiplier normalized to 60 FPS
+    // This ensures consistent game speed regardless of actual frame rate
+    deltaTime = frameTime / TARGET_FRAME_TIME;
+    
+    // Cap delta time to prevent huge jumps (e.g., when tab loses focus)
+    deltaTime = Math.min(deltaTime, 3);
+    
     // Clear canvas
     ctx.fillStyle = '#0a0a1a';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -766,7 +791,7 @@ function gameLoop() {
         // Draw stars background
         drawStars();
         
-        // Update
+        // Update (all update functions now use deltaTime for consistent speed)
         updatePlayer();
         updateTunnels();
         updateEnemies();
@@ -795,6 +820,66 @@ function gameLoop() {
 
 // Start game loop
 gameLoop();
+
+/**
+ * Renders loot type icons in the legend on the menu screen
+ */
+function renderLootLegendIcons() {
+    const icons = document.querySelectorAll('.loot-icon');
+    
+    icons.forEach(canvas => {
+        const lootKey = canvas.getAttribute('data-loot');
+        const lootType = LOOT_TYPES[lootKey];
+        
+        if (!lootType) return;
+        
+        const ctx = canvas.getContext('2d');
+        const size = 30;
+        canvas.width = size;
+        canvas.height = size;
+        
+        const centerX = size / 2;
+        const centerY = size / 2;
+        const iconSize = 20;
+        
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        
+        // Draw based on shape (matching in-game appearance)
+        if (lootType.shape === 'circle') {
+            // Draw circle
+            ctx.fillStyle = lootType.color;
+            ctx.beginPath();
+            ctx.arc(0, 0, iconSize / 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add glow effect
+            ctx.strokeStyle = lootType.color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(0, 0, iconSize / 2 + 2, 0, Math.PI * 2);
+            ctx.stroke();
+        } else {
+            // Draw square
+            ctx.fillStyle = lootType.color;
+            ctx.fillRect(-iconSize / 2, -iconSize / 2, iconSize, iconSize);
+            
+            // Add border
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(-iconSize / 2, -iconSize / 2, iconSize, iconSize);
+        }
+        
+        // Add sparkle
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(-1, -1, 2, 2);
+        
+        ctx.restore();
+    });
+}
+
+// Render loot icons when page loads
+renderLootLegendIcons();
 
 // Service worker registration
 if ('serviceWorker' in navigator) {
