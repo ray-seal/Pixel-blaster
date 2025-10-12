@@ -109,6 +109,21 @@ const LOOT_TYPES = {
             player.bigEnemyMode = false;
         }
     },
+    EXTRA_LIFE: {
+        id: 'extra_life',
+        name: 'Extra Life',
+        color: '#00ff00',
+        shape: 'circle',
+        duration: 0, // Instant effect
+        type: 'beneficial',
+        apply: () => {
+            // Grant one additional life (can exceed maxHealth for extra lives)
+            player.health++;
+        },
+        remove: () => {
+            // No removal needed for instant effect
+        }
+    },
     RANDOM_OBSTACLES: {
         id: 'random_obstacles',
         name: 'Random Obstacles',
@@ -313,6 +328,12 @@ function createLootDrop(x, y) {
  * @param {object} lootType - The loot type to apply
  */
 function applyLootEffect(lootType) {
+    // Handle instant effects (duration 0) separately
+    if (lootType.duration === 0) {
+        lootType.apply();
+        return;
+    }
+    
     // Check if this effect is already active
     const existingEffect = activeEffects.find(e => e.lootType.id === lootType.id);
     
