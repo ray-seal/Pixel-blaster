@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="refresh" content="0; url=/" />
+    <script>
+      // If JS is enabled, redirect preserving the path for SPA routing
+      var path = window.location.pathname;
+      var search = window.location.search;
+      var hash = window.location.hash;
+      window.location.replace("/" + search + hash);
+    </script>
+    <title>Redirecting...</title>
+  </head>
+  <body>
+    <h1>Redirecting...</h1>
+    <p>If you are not redirected automatically, <a href="/">click here</a>.</p>
+  </body>
+</html>
