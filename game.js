@@ -23,9 +23,18 @@ let score = 0;
 let highScore = localStorage.getItem('highScore') || 0;
 let gameSpeed = 2;
 let distanceTraveled = 0;
+let coins = parseInt(localStorage.getItem('coins')) || 0;
+let lastDistanceMilestone = 0;
 
 // Progressive difficulty system
 let enemySpawnRate = 0.005; // Start with fewer enemies (0.5% chance per frame)
+
+// Distance-based upgrades tracking
+let playerColorIndex = 0;
+let enemyColorIndex = 0;
+let baseShootCooldown = 15;
+let shootingEnemiesEnabled = false;
+let enemyFireSpeed = 3; // Speed of enemy bullets
 
 // Delta time tracking for consistent game speed across devices
 let lastFrameTime = 0;
@@ -51,8 +60,14 @@ const player = {
     bigEnemyMode: false,
     obstacleMode: false,
     originalWidth: 20,
-    originalHeight: 12
+    originalHeight: 12,
+    // Shield perk
+    hasShield: false
 };
+
+// Color palettes for distance-based upgrades
+const playerColors = ['#00ff00', '#00ffff', '#ffff00', '#ff00ff', '#ff8800', '#00ff88'];
+const enemyBaseColors = ['#ff0066', '#ff3366', '#ff6600', '#ff00aa', '#cc00ff', '#ff0033'];
 
 // Game objects arrays
 let tunnels = [];
@@ -62,9 +77,14 @@ let particles = [];
 let powerups = [];
 let lootDrops = [];
 let obstacles = []; // Random obstacles spawned by loot effects
+let enemyBullets = []; // Bullets fired by shooting enemies
+let coins_on_screen = []; // Coin pickups
 
 // Active effects tracking
 let activeEffects = [];
+
+// Purchased perks inventory
+let purchasedPerks = JSON.parse(localStorage.getItem('purchasedPerks') || '{}');
 
 /**
  * LOOT DROP SYSTEM
@@ -197,17 +217,19 @@ menuScreen.addEventListener('click', () => {
     if (gameState === 'menu') startGame();
 });
 
-gameOverScreen.addEventListener('click', () => {
-    if (gameState === 'gameOver') startGame();
-});
-
 // Game functions
 function startGame() {
     gameState = 'playing';
     score = 0;
     distanceTraveled = 0;
+    lastDistanceMilestone = 0;
     gameSpeed = 2;
     enemySpawnRate = 0.005; // Reset to easy difficulty
+    baseShootCooldown = 15;
+    playerColorIndex = 0;
+    enemyColorIndex = 0;
+    shootingEnemiesEnabled = false;
+    enemyFireSpeed = 3;
     player.x = 100;
     player.y = canvas.height / 2;
     player.velocityY = 0;
@@ -217,9 +239,15 @@ function startGame() {
     player.doubleShot = false;
     player.bigEnemyMode = false;
     player.obstacleMode = false;
+    player.hasShield = false;
+    player.invincible = false;
+    player.coinMagnet = false;
+    player.color = playerColors[0];
     tunnels = [];
     enemies = [];
     bullets = [];
+    enemyBullets = [];
+    coins_on_screen = [];
     particles = [];
     powerups = [];
     lootDrops = [];
@@ -230,7 +258,9 @@ function startGame() {
     
     menuScreen.classList.remove('active');
     gameOverScreen.classList.remove('active');
+    upgradesMenu.classList.remove('active');
     hud.classList.add('active');
+    updatePerkButtons();
 }
 
 function gameOver() {
@@ -262,6 +292,9 @@ function createEnemy() {
     const size = isBig ? 32 : 16;
     const points = isBig ? 150 : 50; // Big enemies worth more points
     
+    // Check if this should be a shooting enemy (only after 5000 distance)
+    const canShoot = shootingEnemiesEnabled && Math.random() < 0.3; // 30% chance
+    
     return {
         x: canvas.width + 50,
         y: Math.random() * (canvas.height - size - 40) + 20,
@@ -269,9 +302,11 @@ function createEnemy() {
         height: size,
         speed: gameSpeed + Math.random() * 2,
         health: 1,
-        color: isBig ? '#ff0099' : '#ff0066',
+        color: isBig ? '#ff0099' : enemyBaseColors[enemyColorIndex],
         isBig: isBig,
-        points: points
+        points: points,
+        canShoot: canShoot,
+        shootCooldown: canShoot ? Math.random() * 60 + 30 : 0
     };
 }
 
@@ -283,6 +318,31 @@ function createBullet() {
         height: 3,
         speed: 8,
         color: '#ffff00'
+    };
+}
+
+function createEnemyBullet(enemy) {
+    return {
+        x: enemy.x,
+        y: enemy.y + enemy.height / 2,
+        width: 6,
+        height: 3,
+        speed: enemyFireSpeed,
+        color: '#ff0000'
+    };
+}
+
+function createCoin(x, y, isRare = false) {
+    return {
+        x: x,
+        y: y,
+        width: 10,
+        height: 10,
+        speed: gameSpeed * 0.5,
+        value: isRare ? 10 : 1,
+        isRare: isRare,
+        rotation: 0,
+        color: isRare ? '#ffd700' : '#ffaa00'
     };
 }
 
@@ -455,7 +515,7 @@ function updatePlayer() {
             });
         }
         
-        player.shootCooldown = 15;
+        player.shootCooldown = baseShootCooldown;
     }
     if (player.shootCooldown > 0) {
         player.shootCooldown -= deltaTime;
@@ -499,6 +559,16 @@ function updateEnemies() {
         const enemy = enemies[i];
         enemy.x -= enemy.speed * deltaTime;
         
+        // Handle shooting enemies
+        if (enemy.canShoot && enemy.shootCooldown > 0) {
+            enemy.shootCooldown -= deltaTime;
+        }
+        
+        if (enemy.canShoot && enemy.shootCooldown <= 0 && enemy.x < canvas.width - 100) {
+            enemyBullets.push(createEnemyBullet(enemy));
+            enemy.shootCooldown = Math.random() * 60 + 60; // Shoot every 60-120 frames
+        }
+        
         // Remove off-screen enemies
         if (enemy.x + enemy.width < 0) {
             enemies.splice(i, 1);
@@ -514,6 +584,31 @@ function updateBullets() {
         // Remove off-screen bullets
         if (bullet.x > canvas.width) {
             bullets.splice(i, 1);
+        }
+    }
+}
+
+function updateEnemyBullets() {
+    for (let i = enemyBullets.length - 1; i >= 0; i--) {
+        const bullet = enemyBullets[i];
+        bullet.x -= bullet.speed * deltaTime;
+        
+        // Remove off-screen bullets
+        if (bullet.x + bullet.width < 0) {
+            enemyBullets.splice(i, 1);
+        }
+    }
+}
+
+function updateCoins() {
+    for (let i = coins_on_screen.length - 1; i >= 0; i--) {
+        const coin = coins_on_screen[i];
+        coin.x -= coin.speed * deltaTime;
+        coin.rotation += 0.1 * deltaTime;
+        
+        // Remove off-screen coins
+        if (coin.x + coin.width < 0) {
+            coins_on_screen.splice(i, 1);
         }
     }
 }
@@ -548,8 +643,20 @@ function checkCollisions() {
         const enemy = enemies[i];
         if (isColliding(player, enemy)) {
             particles.push(...createParticle(enemy.x, enemy.y, enemy.color));
+            
+            // Shield kills enemy on contact
+            if (player.hasShield) {
+                score += enemy.points;
+                // Drop coin chance
+                if (Math.random() < 0.5) {
+                    const isRare = Math.random() < 0.1;
+                    coins_on_screen.push(createCoin(enemy.x, enemy.y, isRare));
+                }
+            } else {
+                takeDamage();
+            }
+            
             enemies.splice(i, 1);
-            takeDamage();
         }
     }
     
@@ -559,7 +666,26 @@ function checkCollisions() {
         if (isColliding(player, obstacle)) {
             particles.push(...createParticle(obstacle.x, obstacle.y, obstacle.color));
             obstacles.splice(i, 1);
-            takeDamage();
+            
+            if (player.hasShield) {
+                // Shield protects from obstacles
+                score += 25;
+            } else {
+                takeDamage();
+            }
+        }
+    }
+    
+    // Player vs enemy bullets
+    for (let i = enemyBullets.length - 1; i >= 0; i--) {
+        const bullet = enemyBullets[i];
+        if (isColliding(player, bullet)) {
+            particles.push(...createParticle(bullet.x, bullet.y, bullet.color));
+            enemyBullets.splice(i, 1);
+            
+            if (!player.hasShield) {
+                takeDamage();
+            }
         }
     }
     
@@ -578,6 +704,30 @@ function checkCollisions() {
         }
     }
     
+    // Player vs coins
+    for (let i = coins_on_screen.length - 1; i >= 0; i--) {
+        const coin = coins_on_screen[i];
+        
+        // Coin magnet effect - attract coins from farther away
+        if (player.coinMagnet) {
+            const dx = player.x - coin.x;
+            const dy = player.y - coin.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < 100) {
+                coin.x += dx * 0.1;
+                coin.y += dy * 0.1;
+            }
+        }
+        
+        if (isColliding(player, coin)) {
+            particles.push(...createParticle(coin.x, coin.y, coin.color));
+            coins += coin.value;
+            localStorage.setItem('coins', coins);
+            coins_on_screen.splice(i, 1);
+        }
+    }
+    
     // Bullets vs enemies
     for (let i = bullets.length - 1; i >= 0; i--) {
         const bullet = bullets[i];
@@ -585,6 +735,12 @@ function checkCollisions() {
             const enemy = enemies[j];
             if (isColliding(bullet, enemy)) {
                 particles.push(...createParticle(enemy.x, enemy.y, enemy.color));
+                
+                // Drop coin (50% chance, 10% rare)
+                if (Math.random() < 0.5) {
+                    const isRare = Math.random() < 0.1;
+                    coins_on_screen.push(createCoin(enemy.x, enemy.y, isRare));
+                }
                 
                 // Random chance to drop loot (20% chance)
                 if (Math.random() < 0.2) {
@@ -608,6 +764,8 @@ function isColliding(obj1, obj2) {
 }
 
 function takeDamage() {
+    if (player.invincible) return; // Invincibility perk prevents damage
+    
     player.health--;
     if (player.health <= 0) {
         gameOver();
@@ -617,6 +775,34 @@ function takeDamage() {
 function updateScore() {
     distanceTraveled += gameSpeed * deltaTime;
     score += 0.1 * deltaTime; // Gradual score increase for distance (scaled by delta time)
+    
+    // Check for distance milestones (every 1000 units)
+    const currentMilestone = Math.floor(distanceTraveled / 1000);
+    if (currentMilestone > lastDistanceMilestone) {
+        lastDistanceMilestone = currentMilestone;
+        
+        // Odd milestones (1000, 3000, 5000, etc.): Increase rate of fire
+        if (currentMilestone % 2 === 1) {
+            baseShootCooldown = Math.max(5, baseShootCooldown - 2); // Reduce cooldown, min 5
+        }
+        
+        // Even milestones (2000, 4000, 6000, etc.): Change colors
+        if (currentMilestone % 2 === 0) {
+            playerColorIndex = (playerColorIndex + 1) % playerColors.length;
+            player.color = playerColors[playerColorIndex];
+            enemyColorIndex = (enemyColorIndex + 1) % enemyBaseColors.length;
+        }
+        
+        // At 5000: Enable shooting enemies
+        if (currentMilestone === 5) {
+            shootingEnemiesEnabled = true;
+        }
+        
+        // Every 2000 after 5000: Increase enemy fire speed
+        if (currentMilestone >= 5 && currentMilestone % 2 === 1) {
+            enemyFireSpeed = Math.min(7, enemyFireSpeed + 0.5);
+        }
+    }
     
     // Progressive difficulty system - gradually increase game speed and enemy spawn rate
     // Every 1000 units of distance traveled:
@@ -629,6 +815,27 @@ function updateScore() {
 }
 
 function drawPlayer() {
+    // Draw shield if active
+    if (player.hasShield) {
+        ctx.strokeStyle = '#00ffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(
+            player.x + player.width / 2,
+            player.y + player.height / 2,
+            Math.max(player.width, player.height) / 2 + 4,
+            0,
+            Math.PI * 2
+        );
+        ctx.stroke();
+        
+        // Pulsing inner circle
+        ctx.globalAlpha = 0.3 + Math.sin(Date.now() / 100) * 0.2;
+        ctx.fillStyle = '#00ffff';
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+    
     // Draw ship body
     ctx.fillStyle = player.color;
     ctx.fillRect(player.x, player.y, player.width, player.height);
@@ -675,6 +882,12 @@ function drawEnemies() {
         ctx.fillStyle = '#fff';
         ctx.fillRect(enemy.x + 6, enemy.y + 6, eyeSize, eyeSize);
         ctx.fillRect(enemy.x + (enemy.isBig ? 10 : 10), enemy.y + 6, eyeSize, eyeSize);
+        
+        // Show indicator for shooting enemies
+        if (enemy.canShoot) {
+            ctx.fillStyle = '#ffff00';
+            ctx.fillRect(enemy.x + 2, enemy.y + 2, 3, 3);
+        }
     }
 }
 
@@ -684,6 +897,49 @@ function drawBullets() {
         ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
         ctx.fillStyle = '#fff';
         ctx.fillRect(bullet.x + 2, bullet.y + 1, 4, 1);
+    }
+}
+
+function drawEnemyBullets() {
+    for (const bullet of enemyBullets) {
+        ctx.fillStyle = bullet.color;
+        ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+        ctx.fillStyle = '#ff6666';
+        ctx.fillRect(bullet.x + 1, bullet.y + 1, 3, 1);
+    }
+}
+
+function drawCoins() {
+    for (const coin of coins_on_screen) {
+        const centerX = coin.x + coin.width / 2;
+        const centerY = coin.y + coin.height / 2;
+        
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(coin.rotation);
+        
+        // Draw coin
+        ctx.fillStyle = coin.color;
+        ctx.beginPath();
+        ctx.arc(0, 0, coin.width / 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Add shine effect
+        ctx.fillStyle = coin.isRare ? '#ffffff' : '#ffdd66';
+        ctx.beginPath();
+        ctx.arc(-1, -1, 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Rare coins have a star
+        if (coin.isRare) {
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 8px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('★', 0, 0);
+        }
+        
+        ctx.restore();
     }
 }
 
@@ -790,7 +1046,7 @@ function drawActiveEffects() {
 }
 
 function updateHUD() {
-    scoreDisplay.textContent = `Score: ${Math.floor(score)}`;
+    scoreDisplay.textContent = `Score: ${Math.floor(score)} | Coins: ${coins} | Dist: ${Math.floor(distanceTraveled)}`;
     // Handle cases where health exceeds maxHealth (e.g., from EXTRA_LIFE loot)
     const emptyHearts = Math.max(0, player.maxHealth - player.health);
     healthDisplay.textContent = `Health: ${'❤'.repeat(player.health)}${'🖤'.repeat(emptyHearts)}`;
@@ -828,6 +1084,8 @@ function gameLoop(timestamp) {
         updateTunnels();
         updateEnemies();
         updateBullets();
+        updateEnemyBullets();
+        updateCoins();
         updateParticles();
         updateLootDrops();
         updateLootEffects();
@@ -841,7 +1099,9 @@ function gameLoop(timestamp) {
         drawObstacles();
         drawEnemies();
         drawLootDrops();
+        drawCoins();
         drawBullets();
+        drawEnemyBullets();
         drawPlayer();
         drawParticles();
         drawActiveEffects();
@@ -912,6 +1172,212 @@ function renderLootLegendIcons() {
 
 // Render loot icons when page loads
 renderLootLegendIcons();
+
+// UPGRADES SHOP SYSTEM
+const PERK_DEFINITIONS = {
+    speed2x: {
+        name: '2x Speed',
+        cost: 50,
+        duration: 15000,
+        apply: () => {
+            player.thrust = -12;
+            player.gravity = 0.6;
+        },
+        remove: () => {
+            player.thrust = -6;
+            player.gravity = 0.3;
+        }
+    },
+    lessEnemies: {
+        name: 'Enemy Reducer',
+        cost: 40,
+        duration: 15000,
+        apply: () => {
+            enemySpawnRate *= 0.5;
+        },
+        remove: () => {
+            enemySpawnRate = Math.min(0.005 + Math.floor(distanceTraveled / 1000) * 0.0025, 0.025);
+        }
+    },
+    shield: {
+        name: 'Shield',
+        cost: 60,
+        duration: 15000,
+        apply: () => {
+            player.hasShield = true;
+        },
+        remove: () => {
+            player.hasShield = false;
+        }
+    },
+    rapidFire: {
+        name: 'Rapid Fire',
+        cost: 45,
+        duration: 15000,
+        apply: () => {
+            baseShootCooldown = 3;
+        },
+        remove: () => {
+            baseShootCooldown = Math.max(5, 15 - Math.floor(distanceTraveled / 1000) * 2);
+        }
+    },
+    coinMagnet: {
+        name: 'Coin Magnet',
+        cost: 30,
+        duration: 15000,
+        apply: () => {
+            player.coinMagnet = true;
+        },
+        remove: () => {
+            player.coinMagnet = false;
+        }
+    },
+    invincibility: {
+        name: 'Invincibility',
+        cost: 100,
+        duration: 15000,
+        apply: () => {
+            player.invincible = true;
+        },
+        remove: () => {
+            player.invincible = false;
+        }
+    }
+};
+
+// Get DOM elements for shop
+const upgradesMenu = document.getElementById('upgradesMenu');
+const shopBtn = document.getElementById('shopBtn');
+const backToMenuBtn = document.getElementById('backToMenuBtn');
+const mainMenuBtn = document.getElementById('mainMenuBtn');
+const retryBtn = document.getElementById('retryBtn');
+const coinDisplayShop = document.getElementById('coinDisplay');
+const perkButtonsContainer = document.getElementById('perkButtons');
+
+// Shop button handlers
+shopBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openShop();
+});
+
+backToMenuBtn.addEventListener('click', () => {
+    upgradesMenu.classList.remove('active');
+    menuScreen.classList.add('active');
+});
+
+mainMenuBtn.addEventListener('click', () => {
+    gameOverScreen.classList.remove('active');
+    menuScreen.classList.add('active');
+});
+
+retryBtn.addEventListener('click', () => {
+    startGame();
+});
+
+function openShop() {
+    menuScreen.classList.remove('active');
+    upgradesMenu.classList.add('active');
+    updateShopDisplay();
+}
+
+function updateShopDisplay() {
+    coinDisplayShop.textContent = `Coins: ${coins}`;
+    
+    // Update buy buttons
+    document.querySelectorAll('.upgrade-item').forEach(item => {
+        const perkId = item.getAttribute('data-perk');
+        const perk = PERK_DEFINITIONS[perkId];
+        const buyButton = item.querySelector('.buy-button');
+        const owned = purchasedPerks[perkId] || 0;
+        
+        if (owned > 0) {
+            buyButton.textContent = `Owned (${owned})`;
+            buyButton.disabled = true;
+        } else if (coins >= perk.cost) {
+            buyButton.textContent = 'Buy';
+            buyButton.disabled = false;
+        } else {
+            buyButton.textContent = 'Not Enough Coins';
+            buyButton.disabled = true;
+        }
+    });
+}
+
+// Add click handlers to buy buttons
+document.querySelectorAll('.buy-button').forEach(button => {
+    const item = button.closest('.upgrade-item');
+    const perkId = item.getAttribute('data-perk');
+    
+    button.addEventListener('click', () => {
+        buyPerk(perkId);
+    });
+});
+
+function buyPerk(perkId) {
+    const perk = PERK_DEFINITIONS[perkId];
+    
+    if (coins >= perk.cost) {
+        coins -= perk.cost;
+        localStorage.setItem('coins', coins);
+        
+        purchasedPerks[perkId] = (purchasedPerks[perkId] || 0) + 1;
+        localStorage.setItem('purchasedPerks', JSON.stringify(purchasedPerks));
+        
+        updateShopDisplay();
+    }
+}
+
+function updatePerkButtons() {
+    // Clear existing buttons
+    perkButtonsContainer.innerHTML = '';
+    
+    let hasPerks = false;
+    for (const perkId in purchasedPerks) {
+        if (purchasedPerks[perkId] > 0) {
+            hasPerks = true;
+            const perk = PERK_DEFINITIONS[perkId];
+            const button = document.createElement('button');
+            button.className = 'perk-button';
+            button.innerHTML = `${perk.name} <span class="count">x${purchasedPerks[perkId]}</span>`;
+            button.addEventListener('click', () => usePerk(perkId));
+            perkButtonsContainer.appendChild(button);
+        }
+    }
+    
+    if (hasPerks && gameState === 'playing') {
+        perkButtonsContainer.classList.add('active');
+    } else {
+        perkButtonsContainer.classList.remove('active');
+    }
+}
+
+function usePerk(perkId) {
+    if (gameState !== 'playing') return;
+    if (!purchasedPerks[perkId] || purchasedPerks[perkId] <= 0) return;
+    
+    const perk = PERK_DEFINITIONS[perkId];
+    
+    // Consume the perk
+    purchasedPerks[perkId]--;
+    localStorage.setItem('purchasedPerks', JSON.stringify(purchasedPerks));
+    
+    // Apply the perk
+    perk.apply();
+    
+    // Add to active effects
+    activeEffects.push({
+        lootType: {
+            id: perkId,
+            name: perk.name,
+            type: 'beneficial',
+            remove: perk.remove
+        },
+        startTime: Date.now(),
+        endTime: Date.now() + perk.duration
+    });
+    
+    updatePerkButtons();
+}
 
 // Service worker registration
 if ('serviceWorker' in navigator) {

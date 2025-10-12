@@ -15,6 +15,7 @@
         <div id="menu" class="screen active">
             <h1>PIXEL BLASTER</h1>
             <p>Tap to start</p>
+            <button id="shopBtn" class="menu-button">Upgrades Shop</button>
             <p class="instructions">Tap/Click to thrust up<br>Hold to shoot</p>
             <div id="lootLegend">
                 <h2>LOOT DROPS</h2>
@@ -65,12 +66,59 @@
             <h1>GAME OVER</h1>
             <p id="finalScore">Score: 0</p>
             <p id="highScore">High Score: 0</p>
-            <p class="restart">Tap to restart</p>
+            <div class="game-over-buttons">
+                <button id="mainMenuBtn" class="menu-button">Main Menu</button>
+                <button id="retryBtn" class="menu-button">Retry</button>
+            </div>
+        </div>
+        <div id="upgradesMenu" class="screen">
+            <h1>UPGRADES SHOP</h1>
+            <p id="coinDisplay">Coins: 0</p>
+            <div id="upgradesGrid">
+                <div class="upgrade-item" data-perk="speed2x">
+                    <h3>2x Speed</h3>
+                    <p>Double your movement speed for 15 seconds</p>
+                    <p class="price">Cost: 50 coins</p>
+                    <button class="buy-button">Buy</button>
+                </div>
+                <div class="upgrade-item" data-perk="lessEnemies">
+                    <h3>Enemy Reducer</h3>
+                    <p>50% less enemies for 15 seconds</p>
+                    <p class="price">Cost: 40 coins</p>
+                    <button class="buy-button">Buy</button>
+                </div>
+                <div class="upgrade-item" data-perk="shield">
+                    <h3>Shield</h3>
+                    <p>Protective shield that kills on contact for 15 seconds</p>
+                    <p class="price">Cost: 60 coins</p>
+                    <button class="buy-button">Buy</button>
+                </div>
+                <div class="upgrade-item" data-perk="rapidFire">
+                    <h3>Rapid Fire</h3>
+                    <p>Ultra-fast shooting for 15 seconds</p>
+                    <p class="price">Cost: 45 coins</p>
+                    <button class="buy-button">Buy</button>
+                </div>
+                <div class="upgrade-item" data-perk="coinMagnet">
+                    <h3>Coin Magnet</h3>
+                    <p>Attract coins from farther away for 15 seconds</p>
+                    <p class="price">Cost: 30 coins</p>
+                    <button class="buy-button">Buy</button>
+                </div>
+                <div class="upgrade-item" data-perk="invincibility">
+                    <h3>Invincibility</h3>
+                    <p>Cannot take damage for 15 seconds</p>
+                    <p class="price">Cost: 100 coins</p>
+                    <button class="buy-button">Buy</button>
+                </div>
+            </div>
+            <button id="backToMenuBtn" class="menu-button back-button">Back to Menu</button>
         </div>
         <div id="hud">
             <div id="score">Score: 0</div>
             <div id="health">Health: ❤❤❤</div>
         </div>
+        <div id="perkButtons"></div>
     </div>
     <script src="game.js"></script>
 </body>
