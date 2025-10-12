@@ -36,7 +36,13 @@ const player = {
     health: 3,
     maxHealth: 3,
     shootCooldown: 0,
-    color: '#00ff00'
+    color: '#00ff00',
+    // Loot effect flags
+    doubleShot: false,
+    bigEnemyMode: false,
+    obstacleMode: false,
+    originalWidth: 20,
+    originalHeight: 12
 };
 
 // Game objects arrays
@@ -45,6 +51,88 @@ let enemies = [];
 let bullets = [];
 let particles = [];
 let powerups = [];
+let lootDrops = [];
+let obstacles = []; // Random obstacles spawned by loot effects
+
+// Active effects tracking
+let activeEffects = [];
+
+/**
+ * LOOT DROP SYSTEM
+ * 
+ * Loot types are defined in a registry for easy extensibility.
+ * Each loot type has:
+ * - id: unique identifier
+ * - name: display name
+ * - color: visual color for the loot drop
+ * - shape: 'circle' or 'square' for visual distinction
+ * - duration: effect duration in milliseconds
+ * - type: 'beneficial' or 'challenging'
+ * - apply: function to apply the effect
+ * - remove: function to remove the effect when it expires
+ */
+const LOOT_TYPES = {
+    DOUBLE_SHOT: {
+        id: 'double_shot',
+        name: 'Double Shot',
+        color: '#00ffff',
+        shape: 'circle',
+        duration: 8000,
+        type: 'beneficial',
+        apply: () => {
+            player.doubleShot = true;
+        },
+        remove: () => {
+            player.doubleShot = false;
+        }
+    },
+    BIGGER_ENEMIES: {
+        id: 'bigger_enemies',
+        name: 'Big Enemy Spawner',
+        color: '#ff00ff',
+        shape: 'circle',
+        duration: 10000,
+        type: 'beneficial',
+        apply: () => {
+            player.bigEnemyMode = true;
+        },
+        remove: () => {
+            player.bigEnemyMode = false;
+        }
+    },
+    RANDOM_OBSTACLES: {
+        id: 'random_obstacles',
+        name: 'Random Obstacles',
+        color: '#ff4400',
+        shape: 'square',
+        duration: 8000,
+        type: 'challenging',
+        apply: () => {
+            player.obstacleMode = true;
+        },
+        remove: () => {
+            player.obstacleMode = false;
+        }
+    },
+    SHRINK_PLAYER: {
+        id: 'shrink_player',
+        name: 'Shrink Ship',
+        color: '#ff0000',
+        shape: 'square',
+        duration: 6000,
+        type: 'challenging',
+        apply: () => {
+            player.originalWidth = player.width;
+            player.originalHeight = player.height;
+            player.width = Math.floor(player.width * 0.6);
+            player.height = Math.floor(player.height * 0.6);
+        },
+        remove: () => {
+            player.width = player.originalWidth;
+            player.height = player.originalHeight;
+        }
+    }
+};
 
 // Tunnel generation
 let tunnelGap = 180;
@@ -99,11 +187,19 @@ function startGame() {
     player.y = canvas.height / 2;
     player.velocityY = 0;
     player.health = player.maxHealth;
+    player.width = 20;
+    player.height = 12;
+    player.doubleShot = false;
+    player.bigEnemyMode = false;
+    player.obstacleMode = false;
     tunnels = [];
     enemies = [];
     bullets = [];
     particles = [];
     powerups = [];
+    lootDrops = [];
+    obstacles = [];
+    activeEffects = [];
     nextTunnelX = canvas.width;
     
     menuScreen.classList.remove('active');
@@ -136,14 +232,20 @@ function createTunnel(x) {
 }
 
 function createEnemy() {
+    const isBig = player.bigEnemyMode && Math.random() < 0.5; // 50% chance when mode is active
+    const size = isBig ? 32 : 16;
+    const points = isBig ? 150 : 50; // Big enemies worth more points
+    
     return {
         x: canvas.width + 50,
-        y: Math.random() * (canvas.height - 40) + 20,
-        width: 16,
-        height: 16,
+        y: Math.random() * (canvas.height - size - 40) + 20,
+        width: size,
+        height: size,
         speed: gameSpeed + Math.random() * 2,
         health: 1,
-        color: '#ff0066'
+        color: isBig ? '#ff0099' : '#ff0066',
+        isBig: isBig,
+        points: points
     };
 }
 
@@ -174,6 +276,116 @@ function createParticle(x, y, color) {
     return particles;
 }
 
+/**
+ * Creates a loot drop at the specified position
+ * @param {number} x - X position
+ * @param {number} y - Y position
+ * @returns {object} Loot drop object
+ */
+function createLootDrop(x, y) {
+    const lootTypesArray = Object.values(LOOT_TYPES);
+    const lootType = lootTypesArray[Math.floor(Math.random() * lootTypesArray.length)];
+    
+    return {
+        x: x,
+        y: y,
+        width: 12,
+        height: 12,
+        speed: gameSpeed * 0.5, // Slower than enemies
+        lootType: lootType,
+        rotation: 0 // For animation
+    };
+}
+
+/**
+ * Applies a loot effect to the player
+ * @param {object} lootType - The loot type to apply
+ */
+function applyLootEffect(lootType) {
+    // Check if this effect is already active
+    const existingEffect = activeEffects.find(e => e.lootType.id === lootType.id);
+    
+    if (existingEffect) {
+        // Extend the duration
+        existingEffect.endTime = Date.now() + lootType.duration;
+    } else {
+        // Apply new effect
+        lootType.apply();
+        activeEffects.push({
+            lootType: lootType,
+            startTime: Date.now(),
+            endTime: Date.now() + lootType.duration
+        });
+    }
+}
+
+/**
+ * Updates active loot effects and removes expired ones
+ */
+function updateLootEffects() {
+    const now = Date.now();
+    
+    for (let i = activeEffects.length - 1; i >= 0; i--) {
+        const effect = activeEffects[i];
+        
+        if (now >= effect.endTime) {
+            effect.lootType.remove();
+            activeEffects.splice(i, 1);
+        }
+    }
+}
+
+/**
+ * Updates loot drops - moves them and removes off-screen ones
+ */
+function updateLootDrops() {
+    for (let i = lootDrops.length - 1; i >= 0; i--) {
+        const loot = lootDrops[i];
+        loot.x -= loot.speed;
+        loot.rotation += 0.05; // Rotate for visual effect
+        
+        // Remove off-screen loot
+        if (loot.x + loot.width < 0) {
+            lootDrops.splice(i, 1);
+        }
+    }
+}
+
+/**
+ * Creates a random obstacle
+ */
+function createObstacle() {
+    return {
+        x: canvas.width + 20,
+        y: Math.random() * (canvas.height - 60) + 30,
+        width: 20,
+        height: 20,
+        speed: gameSpeed,
+        color: '#ff4400'
+    };
+}
+
+/**
+ * Updates random obstacles spawned by loot effects
+ */
+function updateObstacles() {
+    // Spawn obstacles if obstacle mode is active
+    if (player.obstacleMode && Math.random() < 0.03) {
+        obstacles.push(createObstacle());
+    }
+    
+    // Update and remove obstacles
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+        const obstacle = obstacles[i];
+        obstacle.x -= obstacle.speed;
+        
+        // Remove off-screen obstacles
+        if (obstacle.x + obstacle.width < 0) {
+            obstacles.splice(i, 1);
+        }
+    }
+}
+
 function updatePlayer() {
     // Apply thrust
     if (isThrusting) {
@@ -198,6 +410,19 @@ function updatePlayer() {
     // Shooting
     if (isShooting && player.shootCooldown <= 0) {
         bullets.push(createBullet());
+        
+        // Double shot effect
+        if (player.doubleShot) {
+            bullets.push({
+                ...createBullet(),
+                y: player.y + player.height / 2 + 5
+            });
+            bullets.push({
+                ...createBullet(),
+                y: player.y + player.height / 2 - 5
+            });
+        }
+        
         player.shootCooldown = 15;
     }
     if (player.shootCooldown > 0) {
@@ -295,6 +520,31 @@ function checkCollisions() {
         }
     }
     
+    // Player vs obstacles
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+        const obstacle = obstacles[i];
+        if (isColliding(player, obstacle)) {
+            particles.push(...createParticle(obstacle.x, obstacle.y, obstacle.color));
+            obstacles.splice(i, 1);
+            takeDamage();
+        }
+    }
+    
+    // Player vs loot drops
+    for (let i = lootDrops.length - 1; i >= 0; i--) {
+        const loot = lootDrops[i];
+        if (isColliding(player, loot)) {
+            // Create particles for visual feedback
+            particles.push(...createParticle(loot.x, loot.y, loot.lootType.color));
+            
+            // Apply loot effect
+            applyLootEffect(loot.lootType);
+            
+            // Remove loot drop
+            lootDrops.splice(i, 1);
+        }
+    }
+    
     // Bullets vs enemies
     for (let i = bullets.length - 1; i >= 0; i--) {
         const bullet = bullets[i];
@@ -302,9 +552,15 @@ function checkCollisions() {
             const enemy = enemies[j];
             if (isColliding(bullet, enemy)) {
                 particles.push(...createParticle(enemy.x, enemy.y, enemy.color));
+                
+                // Random chance to drop loot (20% chance)
+                if (Math.random() < 0.2) {
+                    lootDrops.push(createLootDrop(enemy.x, enemy.y));
+                }
+                
+                score += enemy.points; // Use enemy points
                 enemies.splice(j, 1);
                 bullets.splice(i, 1);
-                score += 50; // Bonus for killing enemies
                 break;
             }
         }
@@ -375,11 +631,13 @@ function drawEnemies() {
         ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
         
         // Draw enemy details
+        const detailSize = enemy.isBig ? 16 : 8;
+        const eyeSize = enemy.isBig ? 4 : 2;
         ctx.fillStyle = '#ff0033';
-        ctx.fillRect(enemy.x + 4, enemy.y + 4, 8, 8);
+        ctx.fillRect(enemy.x + 4, enemy.y + 4, detailSize, detailSize);
         ctx.fillStyle = '#fff';
-        ctx.fillRect(enemy.x + 6, enemy.y + 6, 2, 2);
-        ctx.fillRect(enemy.x + 10, enemy.y + 6, 2, 2);
+        ctx.fillRect(enemy.x + 6, enemy.y + 6, eyeSize, eyeSize);
+        ctx.fillRect(enemy.x + (enemy.isBig ? 10 : 10), enemy.y + 6, eyeSize, eyeSize);
     }
 }
 
@@ -410,6 +668,90 @@ function drawStars() {
     }
 }
 
+/**
+ * Draws loot drops with visual distinction
+ */
+function drawLootDrops() {
+    for (const loot of lootDrops) {
+        const centerX = loot.x + loot.width / 2;
+        const centerY = loot.y + loot.height / 2;
+        
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(loot.rotation);
+        
+        // Draw based on shape
+        if (loot.lootType.shape === 'circle') {
+            // Draw circle
+            ctx.fillStyle = loot.lootType.color;
+            ctx.beginPath();
+            ctx.arc(0, 0, loot.width / 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add glow effect
+            ctx.strokeStyle = loot.lootType.color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(0, 0, loot.width / 2 + 2, 0, Math.PI * 2);
+            ctx.stroke();
+        } else {
+            // Draw square
+            ctx.fillStyle = loot.lootType.color;
+            ctx.fillRect(-loot.width / 2, -loot.height / 2, loot.width, loot.height);
+            
+            // Add border
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(-loot.width / 2, -loot.height / 2, loot.width, loot.height);
+        }
+        
+        // Add sparkle
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(-1, -1, 2, 2);
+        
+        ctx.restore();
+    }
+}
+
+/**
+ * Draws random obstacles
+ */
+function drawObstacles() {
+    for (const obstacle of obstacles) {
+        ctx.fillStyle = obstacle.color;
+        ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        
+        // Add warning stripes
+        ctx.fillStyle = '#000';
+        ctx.fillRect(obstacle.x + 2, obstacle.y + 2, obstacle.width - 4, 4);
+        ctx.fillRect(obstacle.x + 2, obstacle.y + 10, obstacle.width - 4, 4);
+    }
+}
+
+/**
+ * Draws active effect indicators on HUD
+ */
+function drawActiveEffects() {
+    const now = Date.now();
+    let yOffset = 60;
+    
+    for (const effect of activeEffects) {
+        const timeLeft = Math.ceil((effect.endTime - now) / 1000);
+        const text = `${effect.lootType.name}: ${timeLeft}s`;
+        
+        // Background
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.fillRect(10, yOffset, 180, 20);
+        
+        // Text color based on type
+        ctx.fillStyle = effect.lootType.type === 'beneficial' ? '#00ff00' : '#ff4400';
+        ctx.font = '12px Courier New';
+        ctx.fillText(text, 15, yOffset + 14);
+        
+        yOffset += 25;
+    }
+}
+
 function updateHUD() {
     scoreDisplay.textContent = `Score: ${Math.floor(score)}`;
     healthDisplay.textContent = `Health: ${'❤'.repeat(player.health)}${'🖤'.repeat(player.maxHealth - player.health)}`;
@@ -430,16 +772,22 @@ function gameLoop() {
         updateEnemies();
         updateBullets();
         updateParticles();
+        updateLootDrops();
+        updateLootEffects();
+        updateObstacles();
         checkCollisions();
         updateScore();
         updateHUD();
         
         // Draw
         drawTunnels();
+        drawObstacles();
         drawEnemies();
+        drawLootDrops();
         drawBullets();
         drawPlayer();
         drawParticles();
+        drawActiveEffects();
     }
     
     requestAnimationFrame(gameLoop);
