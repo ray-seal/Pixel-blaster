@@ -117,10 +117,8 @@ const LOOT_TYPES = {
         duration: 0, // Instant effect
         type: 'beneficial',
         apply: () => {
-            // Grant one additional life (capped at maxHealth)
-            if (player.health < player.maxHealth) {
-                player.health++;
-            }
+            // Grant one additional life (can exceed maxHealth for extra lives)
+            player.health++;
         },
         remove: () => {
             // No removal needed for instant effect
@@ -330,6 +328,12 @@ function createLootDrop(x, y) {
  * @param {object} lootType - The loot type to apply
  */
 function applyLootEffect(lootType) {
+    // Handle instant effects (duration 0) separately
+    if (lootType.duration === 0) {
+        lootType.apply();
+        return;
+    }
+    
     // Check if this effect is already active
     const existingEffect = activeEffects.find(e => e.lootType.id === lootType.id);
     
