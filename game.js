@@ -11,11 +11,27 @@ const highScoreDisplay = document.getElementById('highScore');
 
 // Canvas setup
 function resizeCanvas() {
-    canvas.width = Math.min(window.innerWidth, 800);
-    canvas.height = Math.min(window.innerHeight, 600);
+    // Detect orientation
+    const isPortrait = window.innerHeight > window.innerWidth;
+    
+    if (isPortrait) {
+        // Portrait mode: limit width, allow more height
+        canvas.width = Math.min(window.innerWidth, 600);
+        canvas.height = Math.min(window.innerHeight, 900);
+    } else {
+        // Landscape mode: optimize for wider screens
+        canvas.width = Math.min(window.innerWidth, 900);
+        canvas.height = Math.min(window.innerHeight, 600);
+    }
+    
+    // Update tunnel gap based on canvas height for better gameplay
+    tunnelGap = Math.max(canvas.height * 0.25, 150);
 }
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', () => {
+    setTimeout(resizeCanvas, 100); // Delay to ensure orientation change completes
+});
 
 // Game state
 let gameState = 'menu'; // menu, playing, gameOver
@@ -1262,11 +1278,13 @@ shopBtn.addEventListener('click', (e) => {
 });
 
 backToMenuBtn.addEventListener('click', () => {
+    gameState = 'menu';
     upgradesMenu.classList.remove('active');
     menuScreen.classList.add('active');
 });
 
 mainMenuBtn.addEventListener('click', () => {
+    gameState = 'menu';
     gameOverScreen.classList.remove('active');
     menuScreen.classList.add('active');
 });
