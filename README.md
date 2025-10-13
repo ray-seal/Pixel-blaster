@@ -2,6 +2,9 @@
 
 A retro-style side-scrolling space shooter PWA game for mobile devices.
 
+> **🎮 Fully Offline Playable!** Install as a PWA and play anywhere, anytime - no internet required!  
+> See [PWA_OFFLINE_GUIDE.md](PWA_OFFLINE_GUIDE.md) for complete offline play documentation.
+
 ## Game Description
 
 Pixel Blaster is a progressive web app (PWA) game that combines the mechanics of Flappy Bird with the action of classic space shooters like Asteroids. Navigate your pixelated spaceship through dangerous tunnels that protrude from the top and bottom of the screen while shooting alien ships and collecting points.
@@ -34,7 +37,17 @@ Pixel Blaster is a progressive web app (PWA) game that combines the mechanics of
   - Spawn rate caps at 2.5% and speed caps at 5 for balanced gameplay
 - **Health system**: Three lives to survive as long as possible
 - **High score tracking**: Local storage saves your best score
-- **PWA support**: Install on mobile devices for offline play
+- **Upgrades Shop System**: Earn coins by destroying enemies and purchase temporary power-ups
+  - Various perks available: speed boost, enemy reduction, shields, rapid fire, coin magnet, and invincibility
+  - Coins persist between game sessions
+  - Perks can be activated during gameplay for strategic advantage
+- **Full PWA Support**: Complete offline functionality as a Progressive Web App
+  - **Offline-first**: All game assets cached for offline play
+  - **No internet required**: Play anywhere, anytime after first load
+  - **Standalone app**: Runs independently of browser after installation
+  - **No time restrictions**: Bypasses browser time limits when installed as PWA
+  - **Auto-updates**: Service worker automatically updates the game in the background
+  - **Cross-platform**: Install on Android, iOS, Windows, macOS, Linux, and ChromeOS
 - **Mobile-optimized**: Responsive design for various screen sizes
 
 ## How to Play
@@ -69,18 +82,47 @@ Pixel Blaster is a progressive web app (PWA) game that combines the mechanics of
 ### Play in Browser
 Simply open `index.html` in any modern web browser (Chrome, Firefox, Safari, Edge).
 
-### Install as PWA (Mobile)
-1. Open the game in your mobile browser
-2. Use the browser's "Add to Home Screen" option
-3. Launch from your home screen for a full-screen experience
+### Install as PWA (Progressive Web App)
+
+#### Mobile Installation
+1. **Android (Chrome/Edge)**:
+   - Open the game in Chrome or Edge browser
+   - Tap the menu (⋮) and select "Install app" or "Add to Home Screen"
+   - The game will be installed as a standalone app
+   - Launch from your home screen for a full-screen experience
+
+2. **iOS (Safari)**:
+   - Open the game in Safari browser
+   - Tap the Share button (□↑)
+   - Scroll down and tap "Add to Home Screen"
+   - Tap "Add" to install
+   - Launch from your home screen
+
+#### Desktop Installation
+1. **Chrome/Edge**:
+   - Open the game in your browser
+   - Look for the install icon (⊕) in the address bar
+   - Click "Install" when prompted
+   - The game will open in its own window
+
+### Offline Play
+Once installed, **Pixel Blaster works completely offline**! 
+- All game assets are cached on first load
+- No internet connection required after installation
+- Play anywhere, anytime - even in airplane mode
+- Game state, scores, and coins are saved locally
+- Works independently of browser restrictions
+
+**Note**: The game must be loaded at least once while online to cache all assets. After that, it will work offline indefinitely.
 
 ## Technologies Used
 
 - HTML5 Canvas for rendering
 - Vanilla JavaScript for game logic
 - CSS3 for styling and animations
-- Service Worker for PWA capabilities
+- Service Worker for offline-first PWA capabilities
 - Web App Manifest for installation
+- Cache API for offline asset storage
 
 ## Development
 

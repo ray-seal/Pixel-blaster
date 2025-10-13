@@ -1380,9 +1380,39 @@ function usePerk(perkId) {
     updatePerkButtons();
 }
 
-// Service worker registration
+// Service worker registration for PWA offline support
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {
-        console.log('Service worker registration failed');
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+            .then(registration => {
+                console.log('Service Worker registered successfully:', registration.scope);
+                
+                // Check for updates periodically
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    console.log('New service worker found, installing...');
+                    
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            console.log('New service worker installed, ready to activate');
+                            // Auto-update: tell the new service worker to skip waiting
+                            newWorker.postMessage({ type: 'SKIP_WAITING' });
+                        }
+                    });
+                });
+            })
+            .catch(error => {
+                console.error('Service worker registration failed:', error);
+            });
+        
+        // Reload page when new service worker takes control
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!refreshing) {
+                refreshing = true;
+                console.log('New service worker activated, reloading page...');
+                window.location.reload();
+            }
+        });
     });
 }
