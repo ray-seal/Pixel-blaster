@@ -9,6 +9,11 @@ const healthDisplay = document.getElementById('health');
 const finalScoreDisplay = document.getElementById('finalScore');
 const highScoreDisplay = document.getElementById('highScore');
 
+// Tunnel generation variables (declared early for use in resizeCanvas)
+let tunnelGap = 180;
+let tunnelWidth = 60;
+let nextTunnelX = 0; // Will be set after canvas initialization
+
 // Canvas setup
 function resizeCanvas() {
     // Detect orientation
@@ -194,10 +199,8 @@ const LOOT_TYPES = {
     }
 };
 
-// Tunnel generation
-let tunnelGap = 180;
-let tunnelWidth = 60;
-let nextTunnelX = canvas.width;
+// Initialize nextTunnelX now that canvas is sized
+nextTunnelX = canvas.width;
 
 // Input handling
 let isThrusting = false;
