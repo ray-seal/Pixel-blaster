@@ -47,6 +47,12 @@ Pixel Blaster is a progressive web app (PWA) game that combines the mechanics of
   - Various perks available: speed boost, enemy reduction, shields, rapid fire, coin magnet, and invincibility
   - Coins persist between game sessions
   - Perks can be activated during gameplay for strategic advantage
+  - **Pre-Game Perk Selection**: Equip perks before starting to gain immediate advantages
+    - Perks categorized as **Primary** (Shield, Invincibility) and **Secondary** (all others)
+    - Select 1 primary and up to 2 secondary perks from your inventory
+    - Selected perks automatically activate at game start
+    - Clear visual interface with selection limits and error messages
+    - Strategic loadout system for optimized gameplay
 - **Full PWA Support**: Complete offline functionality as a Progressive Web App
   - **Offline-first**: All game assets cached for offline play
   - **No internet required**: Play anywhere, anytime after first load
@@ -257,6 +263,33 @@ NEW_LOOT: {
 - **lootDrops[]**: Active loot drops on screen
 - **activeEffects[]**: Currently active effects with timers
 - **createLootDrop()**: Spawns a random loot at enemy defeat position
+- **applyLootEffect()**: Applies or extends an effect duration
+- **updateLootEffects()**: Manages effect timers and removal
+- **drawLootDrops()**: Renders loot with visual distinction
+- **drawActiveEffects()**: Shows active effect indicators with countdown
+- **renderLootLegendIcons()**: Renders loot type icons on menu screen legend
+
+### Perk Selection System Architecture
+
+The pre-game perk selection system allows players to equip perks before starting:
+
+- **Perk Categories**: 
+  - `primary`: Defensive perks (Shield, Invincibility) - max 1 equipped
+  - `secondary`: Offensive/utility perks (Speed, Rapid Fire, Coin Magnet, Enemy Reducer) - max 2 equipped
+- **Storage**:
+  - `purchasedPerks`: Object tracking owned perks and quantities (localStorage)
+  - `equippedPerks`: Array of selected perk IDs to apply at game start (localStorage)
+- **Key Functions**:
+  - `openPerkSelection()`: Opens the perk selection screen from shop
+  - `updatePerkSelection()`: Renders available perks and updates selection status
+  - `togglePerkSelection(perkId)`: Handles equip/unequip with limit validation
+  - `startGame()`: Applies equipped perks automatically when game begins
+- **UI Components**:
+  - Selection status display (Primary: 1/1, Secondary: 2/2)
+  - Error messages for exceeded limits
+  - Visual indicators for selected perks (green glow)
+  - Quantity badges showing owned count
+- **Validation**: Enforces 1 primary + 2 secondary limit with explanatory error messages
 - **applyLootEffect()**: Applies or extends an effect duration
 - **updateLootEffects()**: Manages effect timers and removal
 - **drawLootDrops()**: Renders loot with visual distinction

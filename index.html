@@ -132,7 +132,35 @@
                     <button class="buy-button">Buy</button>
                 </div>
             </div>
+            <button id="equipPerksBtn" class="menu-button">Equip Perks</button>
             <button id="backToMenuBtn" class="menu-button back-button">Back to Menu</button>
+        </div>
+        <div id="perkSelectionMenu" class="screen">
+            <h1>EQUIP PERKS</h1>
+            <p class="selection-info">Select perks to start with:<br>1 Primary + 2 Secondary</p>
+            <div id="selectionStatus">
+                <div class="status-item">
+                    <span>Primary:</span>
+                    <span id="primaryStatus">0/1</span>
+                </div>
+                <div class="status-item">
+                    <span>Secondary:</span>
+                    <span id="secondaryStatus">0/2</span>
+                </div>
+            </div>
+            <div id="selectionError" class="selection-error"></div>
+            <div id="perkSelectionGrid">
+                <div class="selection-section">
+                    <h3>PRIMARY PERKS</h3>
+                    <div id="primaryPerks" class="selection-category"></div>
+                </div>
+                <div class="selection-section">
+                    <h3>SECONDARY PERKS</h3>
+                    <div id="secondaryPerks" class="selection-category"></div>
+                </div>
+            </div>
+            <button id="clearSelectionBtn" class="menu-button">Clear Selection</button>
+            <button id="backToShopBtn" class="menu-button back-button">Back to Shop</button>
         </div>
         <div id="hud">
             <div id="score">Score: 0</div>

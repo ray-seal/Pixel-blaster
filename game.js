@@ -298,6 +298,9 @@ let activeEffects = [];
 // Purchased perks inventory
 let purchasedPerks = JSON.parse(localStorage.getItem('purchasedPerks') || '{}');
 
+// Equipped perks for game start
+let equippedPerks = JSON.parse(localStorage.getItem('equippedPerks') || '[]');
+
 /**
  * LOOT DROP SYSTEM
  * 
@@ -466,9 +469,30 @@ function startGame() {
     nextTunnelX = canvas.width;
     lastFrameTime = 0; // Reset delta time tracking
     
+    // Apply equipped perks at game start
+    equippedPerks.forEach(perkId => {
+        if (PERK_DEFINITIONS[perkId]) {
+            const perk = PERK_DEFINITIONS[perkId];
+            perk.apply();
+            
+            // Add to active effects
+            activeEffects.push({
+                lootType: {
+                    id: perkId,
+                    name: perk.name,
+                    type: 'beneficial',
+                    remove: perk.remove
+                },
+                startTime: Date.now(),
+                endTime: Date.now() + perk.duration
+            });
+        }
+    });
+    
     menuScreen.classList.remove('active');
     gameOverScreen.classList.remove('active');
     upgradesMenu.classList.remove('active');
+    perkSelectionMenu.classList.remove('active');
     hud.classList.add('active');
     updatePerkButtons();
 }
@@ -1404,6 +1428,7 @@ const PERK_DEFINITIONS = {
         name: '2x Speed',
         cost: 50,
         duration: 15000,
+        category: 'secondary',
         apply: () => {
             player.thrust = -12;
             player.gravity = 0.6;
@@ -1417,6 +1442,7 @@ const PERK_DEFINITIONS = {
         name: 'Enemy Reducer',
         cost: 40,
         duration: 15000,
+        category: 'secondary',
         apply: () => {
             enemySpawnRate *= 0.5;
         },
@@ -1428,6 +1454,7 @@ const PERK_DEFINITIONS = {
         name: 'Shield',
         cost: 60,
         duration: 15000,
+        category: 'primary',
         apply: () => {
             player.hasShield = true;
         },
@@ -1439,6 +1466,7 @@ const PERK_DEFINITIONS = {
         name: 'Rapid Fire',
         cost: 45,
         duration: 15000,
+        category: 'secondary',
         apply: () => {
             baseShootCooldown = 3;
         },
@@ -1450,6 +1478,7 @@ const PERK_DEFINITIONS = {
         name: 'Coin Magnet',
         cost: 30,
         duration: 15000,
+        category: 'secondary',
         apply: () => {
             player.coinMagnet = true;
         },
@@ -1461,6 +1490,7 @@ const PERK_DEFINITIONS = {
         name: 'Invincibility',
         cost: 100,
         duration: 15000,
+        category: 'primary',
         apply: () => {
             player.invincible = true;
         },
@@ -1479,6 +1509,17 @@ const retryBtn = document.getElementById('retryBtn');
 const coinDisplayShop = document.getElementById('coinDisplay');
 const perkButtonsContainer = document.getElementById('perkButtons');
 
+// Get DOM elements for perk selection
+const perkSelectionMenu = document.getElementById('perkSelectionMenu');
+const equipPerksBtn = document.getElementById('equipPerksBtn');
+const backToShopBtn = document.getElementById('backToShopBtn');
+const clearSelectionBtn = document.getElementById('clearSelectionBtn');
+const primaryPerksContainer = document.getElementById('primaryPerks');
+const secondaryPerksContainer = document.getElementById('secondaryPerks');
+const primaryStatus = document.getElementById('primaryStatus');
+const secondaryStatus = document.getElementById('secondaryStatus');
+const selectionError = document.getElementById('selectionError');
+
 // Shop button handlers
 shopBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -1490,6 +1531,22 @@ backToMenuBtn.addEventListener('click', () => {
     upgradesMenu.classList.remove('active');
     menuScreen.classList.add('active');
     menuScreen.scrollTop = 0; // Reset scroll position
+});
+
+// Perk selection handlers
+equipPerksBtn.addEventListener('click', () => {
+    openPerkSelection();
+});
+
+backToShopBtn.addEventListener('click', () => {
+    perkSelectionMenu.classList.remove('active');
+    upgradesMenu.classList.add('active');
+});
+
+clearSelectionBtn.addEventListener('click', () => {
+    equippedPerks = [];
+    localStorage.setItem('equippedPerks', JSON.stringify(equippedPerks));
+    updatePerkSelection();
 });
 
 mainMenuBtn.addEventListener('click', () => {
@@ -1547,8 +1604,127 @@ function openShop() {
     updateShopDisplay();
 }
 
+function openPerkSelection() {
+    upgradesMenu.classList.remove('active');
+    perkSelectionMenu.classList.add('active');
+    perkSelectionMenu.scrollTop = 0;
+    updatePerkSelection();
+}
+
+function updatePerkSelection() {
+    // Clear error message
+    selectionError.textContent = '';
+    
+    // Clear existing items
+    primaryPerksContainer.innerHTML = '';
+    secondaryPerksContainer.innerHTML = '';
+    
+    // Count equipped perks by category
+    let primaryCount = 0;
+    let secondaryCount = 0;
+    
+    equippedPerks.forEach(perkId => {
+        const perk = PERK_DEFINITIONS[perkId];
+        if (perk) {
+            if (perk.category === 'primary') primaryCount++;
+            else if (perk.category === 'secondary') secondaryCount++;
+        }
+    });
+    
+    // Update status display
+    primaryStatus.textContent = `${primaryCount}/1`;
+    secondaryStatus.textContent = `${secondaryCount}/2`;
+    
+    // Render perks by category
+    for (const perkId in purchasedPerks) {
+        if (purchasedPerks[perkId] > 0) {
+            const perk = PERK_DEFINITIONS[perkId];
+            if (!perk) continue;
+            
+            const isEquipped = equippedPerks.includes(perkId);
+            const container = perk.category === 'primary' ? primaryPerksContainer : secondaryPerksContainer;
+            
+            const item = document.createElement('div');
+            item.className = 'selection-perk-item';
+            if (isEquipped) {
+                item.classList.add('selected');
+            }
+            
+            item.innerHTML = `
+                <div class="count-badge">${purchasedPerks[perkId]}</div>
+                <h4>${perk.name}</h4>
+                <p>${Math.floor(perk.duration / 1000)}s duration</p>
+            `;
+            
+            item.addEventListener('click', () => {
+                togglePerkSelection(perkId);
+            });
+            
+            container.appendChild(item);
+        }
+    }
+    
+    // Show message if no perks are purchased
+    if (primaryPerksContainer.children.length === 0) {
+        primaryPerksContainer.innerHTML = '<p style="color: #888; padding: 20px;">No primary perks purchased</p>';
+    }
+    if (secondaryPerksContainer.children.length === 0) {
+        secondaryPerksContainer.innerHTML = '<p style="color: #888; padding: 20px;">No secondary perks purchased</p>';
+    }
+}
+
+function togglePerkSelection(perkId) {
+    const perk = PERK_DEFINITIONS[perkId];
+    if (!perk) return;
+    
+    const isEquipped = equippedPerks.includes(perkId);
+    
+    if (isEquipped) {
+        // Unequip the perk
+        equippedPerks = equippedPerks.filter(id => id !== perkId);
+        selectionError.textContent = '';
+    } else {
+        // Check limits before equipping
+        const primaryCount = equippedPerks.filter(id => 
+            PERK_DEFINITIONS[id] && PERK_DEFINITIONS[id].category === 'primary'
+        ).length;
+        const secondaryCount = equippedPerks.filter(id => 
+            PERK_DEFINITIONS[id] && PERK_DEFINITIONS[id].category === 'secondary'
+        ).length;
+        
+        if (perk.category === 'primary' && primaryCount >= 1) {
+            selectionError.textContent = '⚠️ Maximum 1 primary perk allowed! Unequip one first.';
+            return;
+        }
+        if (perk.category === 'secondary' && secondaryCount >= 2) {
+            selectionError.textContent = '⚠️ Maximum 2 secondary perks allowed! Unequip one first.';
+            return;
+        }
+        
+        // Equip the perk
+        equippedPerks.push(perkId);
+        selectionError.textContent = '';
+    }
+    
+    // Save and update display
+    localStorage.setItem('equippedPerks', JSON.stringify(equippedPerks));
+    updatePerkSelection();
+}
+
 function updateShopDisplay() {
     coinDisplayShop.textContent = `Coins: ${coins}`;
+    
+    // Check if player has any purchased perks
+    let hasAnyPerks = false;
+    for (const perkId in purchasedPerks) {
+        if (purchasedPerks[perkId] > 0) {
+            hasAnyPerks = true;
+            break;
+        }
+    }
+    
+    // Show/hide equip perks button
+    equipPerksBtn.style.display = hasAnyPerks ? 'block' : 'none';
     
     // Update buy buttons
     document.querySelectorAll('.upgrade-item').forEach(item => {
