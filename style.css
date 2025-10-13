@@ -302,6 +302,15 @@ body {
     transform: scale(0.95);
 }
 
+.menu-button:disabled {
+    background: #333;
+    color: #666;
+    border-color: #333;
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
 .back-button {
     background: #ff6600;
     border-color: #ff6600;

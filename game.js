@@ -18,8 +18,18 @@ const backToMenuFromScores = document.getElementById('backToMenuFromScores');
 
 // Supabase configuration
 const SUPABASE_URL = 'https://qxocafbohchpfqndiibj.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4b2NhZmJvaGNocGZxbmRpaWJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk0NjcyMDAsImV4cCI6MjA1NTA0MzIwMH0.Kv9M13QhpWWaDg_MmPS1ng_aHQ_zsTb';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4b2NhZmJvaGNocGZxbmRpaWJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk0NjcyMDAsImV4cCI6MjA1NTA0MzIwMH0.sb-Kv9M13QhpWWaDg-MmPS1ng-aHQ-zsTb';
+let supabase = null;
+
+// Initialize Supabase when available
+function initSupabase() {
+    if (typeof window.supabase !== 'undefined') {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        console.log('Supabase initialized');
+        return true;
+    }
+    return false;
+}
 
 // Online/offline status
 let isOnline = navigator.onLine;
@@ -88,8 +98,10 @@ async function addHighScore(name, score, distance) {
     globalHighScores = globalHighScores.slice(0, 20); // Keep top 20
     localStorage.setItem('globalHighScores', JSON.stringify(globalHighScores));
     
-    // Try to submit to Supabase
-    if (isOnline) {
+    // Try to submit to Supabase if available
+    if (!supabase) initSupabase();
+    
+    if (isOnline && supabase) {
         try {
             const { error } = await supabase
                 .from('high_scores')
@@ -120,6 +132,9 @@ function queueScore(scoreEntry) {
 
 async function syncQueuedScores() {
     if (!isOnline || queuedScores.length === 0) return;
+    
+    if (!supabase) initSupabase();
+    if (!supabase) return;
     
     console.log(`Syncing ${queuedScores.length} queued score(s)...`);
     const scoresToSync = [...queuedScores];
@@ -154,6 +169,12 @@ async function syncQueuedScores() {
 async function fetchGlobalHighScores() {
     if (!isOnline) {
         console.log('Offline - using cached high scores');
+        return;
+    }
+    
+    if (!supabase) initSupabase();
+    if (!supabase) {
+        console.log('Supabase not available - using cached high scores');
         return;
     }
     
@@ -469,8 +490,13 @@ function gameOver() {
         newHighScorePrompt.style.display = 'block';
         highScoreName.value = '';
         highScoreName.focus();
+        // Disable main menu and retry buttons until name is submitted
+        mainMenuBtn.disabled = true;
+        retryBtn.disabled = true;
     } else {
         newHighScorePrompt.style.display = 'none';
+        mainMenuBtn.disabled = false;
+        retryBtn.disabled = false;
     }
 }
 
@@ -1495,6 +1521,9 @@ submitHighScore.addEventListener('click', () => {
     if (name.length === 3) {
         addHighScore(name, score, distanceTraveled);
         newHighScorePrompt.style.display = 'none';
+        // Re-enable the buttons
+        mainMenuBtn.disabled = false;
+        retryBtn.disabled = false;
     } else {
         // Show validation message
         alert('Please enter exactly 3 characters for your name!');
@@ -1630,6 +1659,7 @@ function usePerk(perkId) {
 
 // Initialize high scores and sync on page load
 (async function initializeHighScores() {
+    initSupabase();
     await fetchGlobalHighScores();
     await syncQueuedScores();
 })();
