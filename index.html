@@ -21,6 +21,7 @@
         <canvas id="gameCanvas"></canvas>
         <div id="menu" class="screen active">
             <h1>PIXEL BLASTER</h1>
+            <button id="highScoreBtn" class="high-score-link" title="High Scores">🏆</button>
             <p>Tap to start</p>
             <button id="shopBtn" class="menu-button">Upgrades Shop</button>
             <p class="instructions">Tap/Click to thrust up<br>Hold to shoot</p>
@@ -73,10 +74,21 @@
             <h1>GAME OVER</h1>
             <p id="finalScore">Score: 0</p>
             <p id="highScore">High Score: 0</p>
+            <div id="newHighScorePrompt" style="display: none;">
+                <p style="color: #ffaa00; font-size: 1.2rem; margin: 20px 0;">🎉 NEW HIGH SCORE! 🎉</p>
+                <p style="font-size: 1rem; margin-bottom: 10px;">Enter your name (3 chars):</p>
+                <input type="text" id="highScoreName" maxlength="3" style="width: 80px; font-size: 1.5rem; text-align: center; text-transform: uppercase; font-family: 'Courier New', monospace; padding: 5px; border: 2px solid #00ff00; background: #000; color: #00ff00;" />
+                <button id="submitHighScore" class="menu-button" style="margin-top: 10px;">Submit</button>
+            </div>
             <div class="game-over-buttons">
                 <button id="mainMenuBtn" class="menu-button">Main Menu</button>
                 <button id="retryBtn" class="menu-button">Retry</button>
             </div>
+        </div>
+        <div id="highScoreTable" class="screen">
+            <h1>HIGH SCORES</h1>
+            <div id="highScoreList" class="high-score-list"></div>
+            <button id="backToMenuFromScores" class="menu-button back-button">Back to Menu</button>
         </div>
         <div id="upgradesMenu" class="screen">
             <h1>UPGRADES SHOP</h1>
