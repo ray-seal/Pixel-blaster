@@ -9,13 +9,34 @@ const healthDisplay = document.getElementById('health');
 const finalScoreDisplay = document.getElementById('finalScore');
 const highScoreDisplay = document.getElementById('highScore');
 
+// Tunnel generation variables (declared early for use in resizeCanvas)
+let tunnelGap = 180;
+let tunnelWidth = 60;
+let nextTunnelX = 0; // Will be set after canvas initialization
+
 // Canvas setup
 function resizeCanvas() {
-    canvas.width = Math.min(window.innerWidth, 800);
-    canvas.height = Math.min(window.innerHeight, 600);
+    // Detect orientation
+    const isPortrait = window.innerHeight > window.innerWidth;
+    
+    if (isPortrait) {
+        // Portrait mode: limit width, allow more height
+        canvas.width = Math.min(window.innerWidth, 600);
+        canvas.height = Math.min(window.innerHeight, 900);
+    } else {
+        // Landscape mode: optimize for wider screens
+        canvas.width = Math.min(window.innerWidth, 900);
+        canvas.height = Math.min(window.innerHeight, 600);
+    }
+    
+    // Update tunnel gap based on canvas height for better gameplay
+    tunnelGap = Math.max(canvas.height * 0.25, 150);
 }
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', () => {
+    setTimeout(resizeCanvas, 100); // Delay to ensure orientation change completes
+});
 
 // Game state
 let gameState = 'menu'; // menu, playing, gameOver
@@ -178,10 +199,8 @@ const LOOT_TYPES = {
     }
 };
 
-// Tunnel generation
-let tunnelGap = 180;
-let tunnelWidth = 60;
-let nextTunnelX = canvas.width;
+// Initialize nextTunnelX now that canvas is sized
+nextTunnelX = canvas.width;
 
 // Input handling
 let isThrusting = false;
@@ -1262,11 +1281,13 @@ shopBtn.addEventListener('click', (e) => {
 });
 
 backToMenuBtn.addEventListener('click', () => {
+    gameState = 'menu';
     upgradesMenu.classList.remove('active');
     menuScreen.classList.add('active');
 });
 
 mainMenuBtn.addEventListener('click', () => {
+    gameState = 'menu';
     gameOverScreen.classList.remove('active');
     menuScreen.classList.add('active');
 });

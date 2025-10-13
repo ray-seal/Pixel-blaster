@@ -463,3 +463,96 @@ body {
         min-height: 44px;
     }
 }
+
+/* Landscape orientation optimizations */
+@media (max-height: 600px) and (orientation: landscape) {
+    .screen h1 {
+        font-size: 1.8rem;
+        margin-bottom: 10px;
+    }
+    
+    .screen p {
+        font-size: 1rem;
+        margin: 5px 0;
+    }
+    
+    #lootLegend {
+        margin-top: 15px;
+        padding: 10px;
+        max-height: 60vh;
+    }
+    
+    #lootLegend h2 {
+        font-size: 1rem;
+        margin-bottom: 10px;
+    }
+    
+    #lootLegend h3 {
+        font-size: 0.75rem;
+        margin-bottom: 8px;
+    }
+    
+    .legend-item {
+        margin-bottom: 8px;
+        padding: 4px;
+    }
+    
+    .loot-icon {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .loot-name {
+        font-size: 0.75rem;
+    }
+    
+    .loot-desc {
+        font-size: 0.65rem;
+    }
+    
+    #upgradesMenu {
+        padding: 10px;
+    }
+    
+    #upgradesGrid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin: 15px 0;
+    }
+    
+    .upgrade-item {
+        padding: 12px;
+    }
+    
+    .upgrade-item h3 {
+        font-size: 1rem;
+    }
+    
+    .upgrade-item p {
+        font-size: 0.75rem;
+        margin: 6px 0;
+    }
+    
+    .menu-button {
+        padding: 10px 20px;
+        font-size: 0.85rem;
+        min-height: 36px;
+    }
+    
+    .game-over-buttons {
+        gap: 12px;
+        margin-top: 15px;
+    }
+}
+
+/* Portrait orientation optimizations */
+@media (min-aspect-ratio: 1/2) and (orientation: portrait) {
+    #lootLegend {
+        max-width: 85%;
+    }
+    
+    #upgradesGrid {
+        grid-template-columns: 1fr;
+        max-width: 400px;
+    }
+}
