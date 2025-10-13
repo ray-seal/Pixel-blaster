@@ -504,6 +504,46 @@ body {
         font-size: 0.9rem;
     }
     
+    /* Fix high score table overflow in portrait/mobile */
+    .high-score-list {
+        max-width: 95%;
+        padding: 15px 10px;
+        overflow-x: auto;
+    }
+    
+    .high-score-entry {
+        grid-template-columns: 35px 50px 85px 70px 90px;
+        gap: 5px;
+        padding: 8px 10px;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+    
+    .high-score-entry.top3 {
+        font-size: 1rem;
+    }
+    
+    .high-score-rank {
+        min-width: 35px;
+    }
+    
+    .high-score-name {
+        min-width: 50px;
+    }
+    
+    .high-score-score {
+        min-width: 85px;
+    }
+    
+    .high-score-distance {
+        min-width: 70px;
+    }
+    
+    .high-score-date {
+        min-width: 90px;
+        font-size: 0.8rem;
+    }
+    
     #lootLegend h2 {
         font-size: 1.1rem;
         margin-bottom: 15px;
