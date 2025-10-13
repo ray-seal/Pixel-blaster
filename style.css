@@ -43,6 +43,7 @@ body {
     z-index: 10;
     text-align: center;
     padding: 20px;
+    overflow-y: auto;
 }
 
 .screen.active {
@@ -409,5 +410,56 @@ body {
     
     .loot-desc {
         font-size: 0.7rem;
+    }
+    
+    /* Upgrades Shop mobile optimization */
+    #upgradesMenu {
+        overflow-y: auto;
+        padding: 15px 10px;
+    }
+    
+    #upgradesGrid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        margin: 20px 0;
+        padding: 0 10px;
+        max-width: 100%;
+        width: 100%;
+    }
+    
+    .upgrade-item {
+        padding: 15px;
+        width: 100%;
+    }
+    
+    .upgrade-item h3 {
+        font-size: 1.1rem;
+        margin-bottom: 8px;
+    }
+    
+    .upgrade-item p {
+        font-size: 0.85rem;
+        margin: 8px 0;
+    }
+    
+    .upgrade-item .price {
+        font-size: 0.95rem;
+    }
+    
+    .buy-button {
+        padding: 12px 24px;
+        font-size: 0.9rem;
+        margin-top: 8px;
+        min-height: 44px;
+    }
+    
+    #coinDisplay {
+        font-size: 1.3rem;
+    }
+    
+    .menu-button {
+        padding: 14px 28px;
+        font-size: 0.95rem;
+        min-height: 44px;
     }
 }
