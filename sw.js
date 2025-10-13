@@ -1,5 +1,12 @@
-const CACHE_NAME = 'pixel-blaster-v4';
-const RUNTIME_CACHE = 'pixel-blaster-runtime-v4';
+// Service Worker for Pixel Blaster PWA
+// This service worker enables offline functionality and manages caching
+
+// CACHE VERSION MANAGEMENT
+// IMPORTANT: Increment version number (v4 -> v5 -> v6, etc.) for EVERY new deployment
+// This ensures users get the latest code without manual cache clearing
+// The version change triggers update detection in the main app (game.js)
+const CACHE_NAME = 'pixel-blaster-v5';
+const RUNTIME_CACHE = 'pixel-blaster-runtime-v5';
 
 // All assets needed for offline play
 const urlsToCache = [
@@ -13,6 +20,8 @@ const urlsToCache = [
 ];
 
 // Install event - cache all essential assets
+// When a new version is deployed, this event fires with the new service worker
+// The skipWaiting() call allows the new worker to activate immediately when approved by user
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -21,7 +30,8 @@ self.addEventListener('install', event => {
         return cache.addAll(urlsToCache);
       })
       .then(() => {
-        // Immediately activate this service worker
+        // Immediately activate this service worker once installed
+        // But wait for user confirmation via the update notification in game.js
         return self.skipWaiting();
       })
       .catch(error => {
@@ -102,9 +112,13 @@ self.addEventListener('fetch', event => {
   );
 });
 
-// Message event - allow clients to skip waiting
+// Message event - handle commands from the main app
+// This enables the update notification system
 self.addEventListener('message', event => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
+    // When user accepts the update in the UI, skip waiting and activate immediately
+    // This will trigger the 'controllerchange' event in the main app, causing a reload
+    console.log('Received SKIP_WAITING message, activating new service worker...');
     self.skipWaiting();
   }
 });

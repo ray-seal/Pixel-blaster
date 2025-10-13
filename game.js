@@ -1841,23 +1841,29 @@ function usePerk(perkId) {
     await syncQueuedScores();
 })();
 
-// Service worker registration for PWA offline support
+// Service worker registration for PWA offline support with update notification
+// This ensures users always get the latest version without manual cache clearing
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js')
             .then(registration => {
                 console.log('Service Worker registered successfully:', registration.scope);
                 
-                // Check for updates periodically
+                // Check for updates periodically (every hour)
+                setInterval(() => {
+                    registration.update();
+                }, 60 * 60 * 1000);
+                
+                // Handle service worker updates
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing;
                     console.log('New service worker found, installing...');
                     
                     newWorker.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            console.log('New service worker installed, ready to activate');
-                            // Auto-update: tell the new service worker to skip waiting
-                            newWorker.postMessage({ type: 'SKIP_WAITING' });
+                            console.log('New service worker installed, waiting for user confirmation');
+                            // Show update notification to user instead of auto-updating
+                            showUpdateNotification(newWorker);
                         }
                     });
                 });
@@ -1867,6 +1873,7 @@ if ('serviceWorker' in navigator) {
             });
         
         // Reload page when new service worker takes control
+        // This happens after user accepts the update
         let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (!refreshing) {
@@ -1876,4 +1883,34 @@ if ('serviceWorker' in navigator) {
             }
         });
     });
+}
+
+/**
+ * Shows update notification banner to the user
+ * Allows user to accept or dismiss the update
+ * @param {ServiceWorker} newWorker - The new service worker waiting to activate
+ */
+function showUpdateNotification(newWorker) {
+    const notification = document.getElementById('updateNotification');
+    const updateBtn = document.getElementById('updateBtn');
+    const dismissBtn = document.getElementById('dismissUpdateBtn');
+    
+    // Show the notification banner
+    notification.style.display = 'block';
+    
+    // Handle update button click - activate new service worker and reload
+    updateBtn.onclick = () => {
+        console.log('User accepted update, activating new service worker...');
+        // Send SKIP_WAITING message to the new service worker
+        newWorker.postMessage({ type: 'SKIP_WAITING' });
+        notification.style.display = 'none';
+        // Page will reload automatically via controllerchange event
+    };
+    
+    // Handle dismiss button click - hide notification but keep it available
+    dismissBtn.onclick = () => {
+        console.log('User dismissed update notification');
+        notification.style.display = 'none';
+        // User can still manually reload later to get the update
+    };
 }
