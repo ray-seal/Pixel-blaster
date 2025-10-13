@@ -24,12 +24,12 @@ let highScore = localStorage.getItem('highScore') || 0;
 let gameSpeed = 2;
 let distanceTraveled = 0;
 let coins = parseInt(localStorage.getItem('coins')) || 0;
-let lastDistanceMilestone = 0;
+let lastScoreMilestone = 0;
 
 // Progressive difficulty system
 let enemySpawnRate = 0.005; // Start with fewer enemies (0.5% chance per frame)
 
-// Distance-based upgrades tracking
+// Score-based upgrades tracking
 let playerColorIndex = 0;
 let enemyColorIndex = 0;
 let baseShootCooldown = 15;
@@ -222,7 +222,7 @@ function startGame() {
     gameState = 'playing';
     score = 0;
     distanceTraveled = 0;
-    lastDistanceMilestone = 0;
+    lastScoreMilestone = 0;
     gameSpeed = 2;
     enemySpawnRate = 0.005; // Reset to easy difficulty
     baseShootCooldown = 15;
@@ -268,7 +268,7 @@ function gameOver() {
     hud.classList.remove('active');
     perkButtonsContainer.classList.remove('active');
     gameOverScreen.classList.add('active');
-    finalScoreDisplay.textContent = `Score: ${Math.floor(score)}`;
+    finalScoreDisplay.textContent = `Score: ${Math.floor(score)}, Distance: ${Math.floor(distanceTraveled)}m`;
     
     if (score > highScore) {
         highScore = Math.floor(score);
@@ -777,10 +777,10 @@ function updateScore() {
     distanceTraveled += gameSpeed * deltaTime;
     score += 0.1 * deltaTime; // Gradual score increase for distance (scaled by delta time)
     
-    // Check for distance milestones (every 1000 units)
-    const currentMilestone = Math.floor(distanceTraveled / 1000);
-    if (currentMilestone > lastDistanceMilestone) {
-        lastDistanceMilestone = currentMilestone;
+    // Check for score milestones (every 1000 points)
+    const currentMilestone = Math.floor(score / 1000);
+    if (currentMilestone > lastScoreMilestone) {
+        lastScoreMilestone = currentMilestone;
         
         // Odd milestones (1000, 3000, 5000, etc.): Increase rate of fire
         if (currentMilestone % 2 === 1) {
@@ -1047,7 +1047,7 @@ function drawActiveEffects() {
 }
 
 function updateHUD() {
-    scoreDisplay.textContent = `Score: ${Math.floor(score)} | Coins: ${coins} | Dist: ${Math.floor(distanceTraveled)}`;
+    scoreDisplay.textContent = `Score: ${Math.floor(score)} | Coins: ${coins} | ${Math.floor(distanceTraveled)}m`;
     // Handle cases where health exceeds maxHealth (e.g., from EXTRA_LIFE loot)
     const emptyHearts = Math.max(0, player.maxHealth - player.health);
     healthDisplay.textContent = `Health: ${'❤'.repeat(player.health)}${'🖤'.repeat(emptyHearts)}`;
@@ -1219,7 +1219,7 @@ const PERK_DEFINITIONS = {
             baseShootCooldown = 3;
         },
         remove: () => {
-            baseShootCooldown = Math.max(5, 15 - Math.floor(distanceTraveled / 1000) * 2);
+            baseShootCooldown = Math.max(5, 15 - Math.floor(score / 1000) * 2);
         }
     },
     coinMagnet: {
