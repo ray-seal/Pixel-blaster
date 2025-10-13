@@ -19,6 +19,14 @@
 </head>
 <body>
     <div id="gameContainer">
+        <!-- Update notification banner -->
+        <div id="updateNotification" class="update-notification" style="display: none;">
+            <div class="update-content">
+                <span class="update-message">🚀 A new version is available!</span>
+                <button id="updateBtn" class="update-button">Reload to Update</button>
+                <button id="dismissUpdateBtn" class="dismiss-button">×</button>
+            </div>
+        </div>
         <canvas id="gameCanvas"></canvas>
         <div id="menu" class="screen active">
             <h1>PIXEL BLASTER</h1>
