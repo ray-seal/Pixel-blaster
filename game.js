@@ -8,6 +8,13 @@ const scoreDisplay = document.getElementById('score');
 const healthDisplay = document.getElementById('health');
 const finalScoreDisplay = document.getElementById('finalScore');
 const highScoreDisplay = document.getElementById('highScore');
+const highScoreTable = document.getElementById('highScoreTable');
+const highScoreList = document.getElementById('highScoreList');
+const newHighScorePrompt = document.getElementById('newHighScorePrompt');
+const highScoreName = document.getElementById('highScoreName');
+const submitHighScore = document.getElementById('submitHighScore');
+const highScoreBtn = document.getElementById('highScoreBtn');
+const backToMenuFromScores = document.getElementById('backToMenuFromScores');
 
 // Tunnel generation variables (declared early for use in resizeCanvas)
 let tunnelGap = 180;
@@ -46,6 +53,40 @@ let gameSpeed = 2;
 let distanceTraveled = 0;
 let coins = parseInt(localStorage.getItem('coins')) || 0;
 let lastScoreMilestone = 0;
+
+// High score table management
+let globalHighScores = JSON.parse(localStorage.getItem('globalHighScores') || '[]');
+
+function addHighScore(name, score) {
+    globalHighScores.push({ name: name.toUpperCase().substring(0, 3), score: Math.floor(score) });
+    globalHighScores.sort((a, b) => b.score - a.score);
+    globalHighScores = globalHighScores.slice(0, 20); // Keep top 20
+    localStorage.setItem('globalHighScores', JSON.stringify(globalHighScores));
+}
+
+function isHighScore(score) {
+    if (globalHighScores.length < 20) return true;
+    return Math.floor(score) > globalHighScores[globalHighScores.length - 1].score;
+}
+
+function displayHighScores() {
+    highScoreList.innerHTML = '';
+    if (globalHighScores.length === 0) {
+        highScoreList.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">No high scores yet. Be the first!</p>';
+        return;
+    }
+    
+    globalHighScores.forEach((entry, index) => {
+        const div = document.createElement('div');
+        div.className = 'high-score-entry' + (index < 3 ? ' top3' : '');
+        div.innerHTML = `
+            <span class="high-score-rank">${index + 1}.</span>
+            <span class="high-score-name">${entry.name}</span>
+            <span class="high-score-score">${entry.score.toLocaleString()}</span>
+        `;
+        highScoreList.appendChild(div);
+    });
+}
 
 // Progressive difficulty system
 let enemySpawnRate = 0.005; // Start with fewer enemies (0.5% chance per frame)
@@ -294,6 +335,15 @@ function gameOver() {
         localStorage.setItem('highScore', highScore);
     }
     highScoreDisplay.textContent = `High Score: ${highScore}`;
+    
+    // Check if this is a global high score
+    if (isHighScore(score)) {
+        newHighScorePrompt.style.display = 'block';
+        highScoreName.value = '';
+        highScoreName.focus();
+    } else {
+        newHighScorePrompt.style.display = 'none';
+    }
 }
 
 function createTunnel(x) {
@@ -1284,21 +1334,53 @@ backToMenuBtn.addEventListener('click', () => {
     gameState = 'menu';
     upgradesMenu.classList.remove('active');
     menuScreen.classList.add('active');
+    menuScreen.scrollTop = 0; // Reset scroll position
 });
 
 mainMenuBtn.addEventListener('click', () => {
     gameState = 'menu';
     gameOverScreen.classList.remove('active');
     menuScreen.classList.add('active');
+    menuScreen.scrollTop = 0; // Reset scroll position
 });
 
 retryBtn.addEventListener('click', () => {
     startGame();
 });
 
+highScoreBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menuScreen.classList.remove('active');
+    highScoreTable.classList.add('active');
+    displayHighScores();
+});
+
+backToMenuFromScores.addEventListener('click', () => {
+    highScoreTable.classList.remove('active');
+    menuScreen.classList.add('active');
+    menuScreen.scrollTop = 0; // Reset scroll position
+});
+
+submitHighScore.addEventListener('click', () => {
+    const name = highScoreName.value.trim() || 'AAA';
+    if (name.length > 0) {
+        addHighScore(name, score);
+        newHighScorePrompt.style.display = 'none';
+    }
+});
+
+highScoreName.addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') {
+        submitHighScore.click();
+    }
+    // Auto-uppercase
+    highScoreName.value = highScoreName.value.toUpperCase();
+});
+
 function openShop() {
     menuScreen.classList.remove('active');
     upgradesMenu.classList.add('active');
+    upgradesMenu.scrollTop = 0; // Reset scroll position
     updateShopDisplay();
 }
 
@@ -1353,6 +1435,16 @@ function updatePerkButtons() {
     // Clear existing buttons
     perkButtonsContainer.innerHTML = '';
     
+    // Icon mappings for perks
+    const perkIcons = {
+        speed2x: '⚡',
+        lessEnemies: '🛡️',
+        shield: '🔰',
+        rapidFire: '🔫',
+        coinMagnet: '🧲',
+        invincibility: '✨'
+    };
+    
     let hasPerks = false;
     for (const perkId in purchasedPerks) {
         if (purchasedPerks[perkId] > 0) {
@@ -1360,7 +1452,9 @@ function updatePerkButtons() {
             const perk = PERK_DEFINITIONS[perkId];
             const button = document.createElement('button');
             button.className = 'perk-button';
-            button.innerHTML = `${perk.name} <span class="count">x${purchasedPerks[perkId]}</span>`;
+            const icon = perkIcons[perkId] || '⭐';
+            button.innerHTML = `${icon}<span class="count">x${purchasedPerks[perkId]}</span>`;
+            button.title = perk.name; // Tooltip for full name
             button.addEventListener('click', () => usePerk(perkId));
             perkButtonsContainer.appendChild(button);
         }

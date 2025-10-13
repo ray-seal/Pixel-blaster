@@ -1,5 +1,5 @@
-const CACHE_NAME = 'pixel-blaster-v2';
-const RUNTIME_CACHE = 'pixel-blaster-runtime-v2';
+const CACHE_NAME = 'pixel-blaster-v3';
+const RUNTIME_CACHE = 'pixel-blaster-runtime-v3';
 
 // All assets needed for offline play
 const urlsToCache = [

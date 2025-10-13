@@ -44,6 +44,8 @@ body {
     text-align: center;
     padding: 20px;
     overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
 }
 
 .screen.active {
@@ -187,6 +189,77 @@ body {
     }
 }
 
+.high-score-link {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 170, 0, 0.9);
+    color: #000;
+    border: 2px solid #ffaa00;
+    padding: 8px 12px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    border-radius: 50%;
+    box-shadow: 0 0 15px #ffaa00;
+    transition: all 0.3s;
+    z-index: 20;
+}
+
+.high-score-link:hover {
+    background: #ffaa00;
+    box-shadow: 0 0 25px #ffaa00;
+    transform: scale(1.1);
+}
+
+.high-score-link:active {
+    transform: scale(0.95);
+}
+
+.high-score-list {
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #ffaa00;
+    border-radius: 10px;
+    padding: 20px;
+    max-width: 600px;
+    margin: 20px auto;
+}
+
+.high-score-entry {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 20px;
+    margin: 5px 0;
+    background: rgba(0, 255, 0, 0.1);
+    border: 1px solid #00ff00;
+    border-radius: 5px;
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+}
+
+.high-score-entry.top3 {
+    background: rgba(255, 170, 0, 0.2);
+    border-color: #ffaa00;
+    font-size: 1.3rem;
+    font-weight: bold;
+}
+
+.high-score-rank {
+    color: #ffaa00;
+    min-width: 40px;
+}
+
+.high-score-name {
+    color: #00ff00;
+    min-width: 60px;
+    text-align: center;
+}
+
+.high-score-score {
+    color: #00ffff;
+    min-width: 100px;
+    text-align: right;
+}
+
 .menu-button {
     background: #00ff00;
     color: #000;
@@ -310,15 +383,37 @@ body {
 
 #perkButtons {
     position: absolute;
-    bottom: 20px;
+    bottom: 60px;
     left: 50%;
     transform: translateX(-50%);
     display: none;
-    gap: 10px;
+    gap: 5px;
     z-index: 5;
     flex-wrap: wrap;
     justify-content: center;
-    max-width: 80%;
+    max-width: 90%;
+}
+
+/* Portrait mode: bottom center */
+@media (orientation: portrait) {
+    #perkButtons {
+        flex-direction: row;
+        bottom: 60px;
+        left: 50%;
+        top: auto;
+        transform: translateX(-50%);
+    }
+}
+
+/* Landscape mode: left side */
+@media (orientation: landscape) {
+    #perkButtons {
+        flex-direction: column;
+        left: 10px;
+        top: 50%;
+        bottom: auto;
+        transform: translateY(-50%);
+    }
 }
 
 #perkButtons.active {
@@ -329,32 +424,34 @@ body {
     background: rgba(0, 255, 0, 0.8);
     color: #000;
     border: 2px solid #00ff00;
-    padding: 10px 15px;
+    padding: 4px 8px;
     font-family: 'Courier New', monospace;
-    font-size: 0.9rem;
+    font-size: 0.7rem;
     font-weight: bold;
     cursor: pointer;
-    border-radius: 5px;
-    box-shadow: 0 0 10px #00ff00;
+    border-radius: 3px;
+    box-shadow: 0 0 8px #00ff00;
     transition: all 0.3s;
     white-space: nowrap;
+    min-width: 40px;
+    text-align: center;
 }
 
 .perk-button:hover {
     background: rgba(0, 255, 0, 1);
-    box-shadow: 0 0 20px #00ff00;
-    transform: scale(1.05);
+    box-shadow: 0 0 15px #00ff00;
+    transform: scale(1.1);
 }
 
 .perk-button:active {
-    transform: scale(0.95);
+    transform: scale(0.9);
 }
 
 .perk-button .count {
     display: inline-block;
     background: #000;
     color: #00ff00;
-    padding: 2px 6px;
+    padding: 1px 4px;
     border-radius: 3px;
     margin-left: 5px;
     font-size: 0.8rem;
