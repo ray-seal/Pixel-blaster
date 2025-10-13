@@ -36,7 +36,13 @@ Pixel Blaster is a progressive web app (PWA) game that combines the mechanics of
   - Every 1000 distance units: spawn rate increases by 0.25% and game speed by 0.1
   - Spawn rate caps at 2.5% and speed caps at 5 for balanced gameplay
 - **Health system**: Three lives to survive as long as possible
-- **High score tracking**: Local storage saves your best score
+- **Global High Score System**: Compete with players worldwide
+  - 🏆 **Global Leaderboard**: View top 20 high scores from all players
+  - **Rich Display**: Shows score, name, distance traveled, and date achieved
+  - **Name Entry**: Required 3-character name for high score submission
+  - **Offline Support**: Scores queued locally and synced when online
+  - **Powered by Supabase**: Real-time global leaderboard with fallback to local storage
+- **Local high score tracking**: Your personal best score saved in browser
 - **Upgrades Shop System**: Earn coins by destroying enemies and purchase temporary power-ups
   - Various perks available: speed boost, enemy reduction, shields, rapid fire, coin magnet, and invincibility
   - Coins persist between game sessions
@@ -123,6 +129,46 @@ Once installed, **Pixel Blaster works completely offline**!
 - Service Worker for offline-first PWA capabilities
 - Web App Manifest for installation
 - Cache API for offline asset storage
+- Supabase for global high score leaderboard
+
+## Supabase Setup (Optional)
+
+The game includes a global high score system powered by Supabase. If you want to use this feature:
+
+1. Create a free account at [Supabase](https://supabase.com)
+2. Create a new project
+3. In the SQL Editor, create the `high_scores` table:
+   ```sql
+   CREATE TABLE high_scores (
+     id BIGSERIAL PRIMARY KEY,
+     name VARCHAR(3) NOT NULL,
+     score INTEGER NOT NULL,
+     distance INTEGER NOT NULL,
+     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+   );
+   
+   -- Add index for faster queries
+   CREATE INDEX idx_high_scores_score ON high_scores(score DESC);
+   
+   -- Enable Row Level Security
+   ALTER TABLE high_scores ENABLE ROW LEVEL SECURITY;
+   
+   -- Allow public read access
+   CREATE POLICY "Allow public read access" ON high_scores
+     FOR SELECT USING (true);
+   
+   -- Allow public insert access
+   CREATE POLICY "Allow public insert access" ON high_scores
+     FOR INSERT WITH CHECK (true);
+   ```
+4. Get your project URL and anon key from Project Settings > API
+5. Update the configuration in `game.js`:
+   ```javascript
+   const SUPABASE_URL = 'your-project-url';
+   const SUPABASE_KEY = 'your-anon-key';
+   ```
+
+**Note**: The game works perfectly offline without Supabase. Scores are cached locally and synced when online.
 
 ## Development
 

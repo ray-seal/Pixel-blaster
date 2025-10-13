@@ -17,8 +17,9 @@ const highScoreBtn = document.getElementById('highScoreBtn');
 const backToMenuFromScores = document.getElementById('backToMenuFromScores');
 
 // Supabase configuration
+// Note: Replace with your actual Supabase anon key from your project settings
 const SUPABASE_URL = 'https://qxocafbohchpfqndiibj.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4b2NhZmJvaGNocGZxbmRpaWJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk0NjcyMDAsImV4cCI6MjA1NTA0MzIwMH0.sb-Kv9M13QhpWWaDg-MmPS1ng-aHQ-zsTb';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4b2NhZmJvaGNocGZxbmRpaWJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk0NjcyMDAsImV4cCI6MjA1NTA0MzIwMH0.Kv9M13QhpWWaDg-MmPS1ng-aHQ-zsTb';
 let supabase = null;
 
 // Initialize Supabase when available
