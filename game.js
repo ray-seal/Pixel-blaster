@@ -16,6 +16,35 @@ const submitHighScore = document.getElementById('submitHighScore');
 const highScoreBtn = document.getElementById('highScoreBtn');
 const backToMenuFromScores = document.getElementById('backToMenuFromScores');
 
+// Supabase configuration
+// Note: Replace with your actual Supabase anon key from your project settings
+const SUPABASE_URL = 'https://qxocafbohchpfqndiibj.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4b2NhZmJvaGNocGZxbmRpaWJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk0NjcyMDAsImV4cCI6MjA1NTA0MzIwMH0.Kv9M13QhpWWaDg-MmPS1ng-aHQ-zsTb';
+let supabase = null;
+
+// Initialize Supabase when available
+function initSupabase() {
+    if (typeof window.supabase !== 'undefined') {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        console.log('Supabase initialized');
+        return true;
+    }
+    return false;
+}
+
+// Online/offline status
+let isOnline = navigator.onLine;
+window.addEventListener('online', () => {
+    isOnline = true;
+    syncQueuedScores();
+});
+window.addEventListener('offline', () => {
+    isOnline = false;
+});
+
+// Queued scores for offline support
+let queuedScores = JSON.parse(localStorage.getItem('queuedScores') || '[]');
+
 // Tunnel generation variables (declared early for use in resizeCanvas)
 let tunnelGap = 180;
 let tunnelWidth = 60;
@@ -57,11 +86,119 @@ let lastScoreMilestone = 0;
 // High score table management
 let globalHighScores = JSON.parse(localStorage.getItem('globalHighScores') || '[]');
 
-function addHighScore(name, score) {
-    globalHighScores.push({ name: name.toUpperCase().substring(0, 3), score: Math.floor(score) });
+async function addHighScore(name, score, distance) {
+    const highScoreEntry = { 
+        name: name.toUpperCase().substring(0, 3), 
+        score: Math.floor(score),
+        distance: Math.floor(distance)
+    };
+    
+    // Update local cache
+    globalHighScores.push(highScoreEntry);
     globalHighScores.sort((a, b) => b.score - a.score);
     globalHighScores = globalHighScores.slice(0, 20); // Keep top 20
     localStorage.setItem('globalHighScores', JSON.stringify(globalHighScores));
+    
+    // Try to submit to Supabase if available
+    if (!supabase) initSupabase();
+    
+    if (isOnline && supabase) {
+        try {
+            const { error } = await supabase
+                .from('high_scores')
+                .insert([highScoreEntry]);
+            
+            if (error) {
+                console.error('Error submitting high score:', error);
+                queueScore(highScoreEntry);
+            } else {
+                console.log('High score submitted successfully!');
+                // Refresh high scores after submission
+                await fetchGlobalHighScores();
+            }
+        } catch (err) {
+            console.error('Network error submitting high score:', err);
+            queueScore(highScoreEntry);
+        }
+    } else {
+        queueScore(highScoreEntry);
+    }
+}
+
+function queueScore(scoreEntry) {
+    queuedScores.push(scoreEntry);
+    localStorage.setItem('queuedScores', JSON.stringify(queuedScores));
+    console.log('Score queued for later submission');
+}
+
+async function syncQueuedScores() {
+    if (!isOnline || queuedScores.length === 0) return;
+    
+    if (!supabase) initSupabase();
+    if (!supabase) return;
+    
+    console.log(`Syncing ${queuedScores.length} queued score(s)...`);
+    const scoresToSync = [...queuedScores];
+    queuedScores = [];
+    localStorage.setItem('queuedScores', JSON.stringify(queuedScores));
+    
+    for (const scoreEntry of scoresToSync) {
+        try {
+            const { error } = await supabase
+                .from('high_scores')
+                .insert([scoreEntry]);
+            
+            if (error) {
+                console.error('Error syncing queued score:', error);
+                queuedScores.push(scoreEntry);
+            }
+        } catch (err) {
+            console.error('Network error syncing queued score:', err);
+            queuedScores.push(scoreEntry);
+        }
+    }
+    
+    // Save any failed scores back to queue
+    if (queuedScores.length > 0) {
+        localStorage.setItem('queuedScores', JSON.stringify(queuedScores));
+    }
+    
+    // Refresh high scores after sync
+    await fetchGlobalHighScores();
+}
+
+async function fetchGlobalHighScores() {
+    if (!isOnline) {
+        console.log('Offline - using cached high scores');
+        return;
+    }
+    
+    if (!supabase) initSupabase();
+    if (!supabase) {
+        console.log('Supabase not available - using cached high scores');
+        return;
+    }
+    
+    try {
+        const { data, error } = await supabase
+            .from('high_scores')
+            .select('name, score, distance, created_at')
+            .order('score', { ascending: false })
+            .limit(20);
+        
+        if (error) {
+            console.error('Error fetching high scores:', error);
+            return;
+        }
+        
+        if (data && data.length > 0) {
+            globalHighScores = data;
+            localStorage.setItem('globalHighScores', JSON.stringify(globalHighScores));
+            console.log('High scores fetched from Supabase:', data.length);
+        }
+    } catch (err) {
+        console.error('Network error fetching high scores:', err);
+    }
 }
 
 function isHighScore(score) {
@@ -79,10 +216,23 @@ function displayHighScores() {
     globalHighScores.forEach((entry, index) => {
         const div = document.createElement('div');
         div.className = 'high-score-entry' + (index < 3 ? ' top3' : '');
+        
+        // Format date if available
+        let dateStr = '';
+        if (entry.created_at) {
+            const date = new Date(entry.created_at);
+            dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+        
+        // Format distance - handle both old entries without distance and new ones
+        const distanceStr = entry.distance ? `${entry.distance}m` : '-';
+        
         div.innerHTML = `
             <span class="high-score-rank">${index + 1}.</span>
             <span class="high-score-name">${entry.name}</span>
             <span class="high-score-score">${entry.score.toLocaleString()}</span>
+            <span class="high-score-distance">${distanceStr}</span>
+            <span class="high-score-date">${dateStr}</span>
         `;
         highScoreList.appendChild(div);
     });
@@ -341,8 +491,13 @@ function gameOver() {
         newHighScorePrompt.style.display = 'block';
         highScoreName.value = '';
         highScoreName.focus();
+        // Disable main menu and retry buttons until name is submitted
+        mainMenuBtn.disabled = true;
+        retryBtn.disabled = true;
     } else {
         newHighScorePrompt.style.display = 'none';
+        mainMenuBtn.disabled = false;
+        retryBtn.disabled = false;
     }
 }
 
@@ -1348,10 +1503,11 @@ retryBtn.addEventListener('click', () => {
     startGame();
 });
 
-highScoreBtn.addEventListener('click', (e) => {
+highScoreBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
     menuScreen.classList.remove('active');
     highScoreTable.classList.add('active');
+    await fetchGlobalHighScores();
     displayHighScores();
 });
 
@@ -1362,10 +1518,17 @@ backToMenuFromScores.addEventListener('click', () => {
 });
 
 submitHighScore.addEventListener('click', () => {
-    const name = highScoreName.value.trim() || 'AAA';
-    if (name.length > 0) {
-        addHighScore(name, score);
+    const name = highScoreName.value.trim();
+    if (name.length === 3) {
+        addHighScore(name, score, distanceTraveled);
         newHighScorePrompt.style.display = 'none';
+        // Re-enable the buttons
+        mainMenuBtn.disabled = false;
+        retryBtn.disabled = false;
+    } else {
+        // Show validation message
+        alert('Please enter exactly 3 characters for your name!');
+        highScoreName.focus();
     }
 });
 
@@ -1494,6 +1657,13 @@ function usePerk(perkId) {
     
     updatePerkButtons();
 }
+
+// Initialize high scores and sync on page load
+(async function initializeHighScores() {
+    initSupabase();
+    await fetchGlobalHighScores();
+    await syncQueuedScores();
+})();
 
 // Service worker registration for PWA offline support
 if ('serviceWorker' in navigator) {

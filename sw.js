@@ -1,5 +1,5 @@
-const CACHE_NAME = 'pixel-blaster-v3';
-const RUNTIME_CACHE = 'pixel-blaster-runtime-v3';
+const CACHE_NAME = 'pixel-blaster-v4';
+const RUNTIME_CACHE = 'pixel-blaster-runtime-v4';
 
 // All assets needed for offline play
 const urlsToCache = [
@@ -56,7 +56,13 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip cross-origin requests
+  // Allow Supabase API calls to pass through (don't cache)
+  if (url.origin.includes('supabase.co') || url.origin.includes('jsdelivr.net')) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  // Skip other cross-origin requests
   if (url.origin !== location.origin) {
     return;
   }
