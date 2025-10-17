@@ -83,12 +83,11 @@
             ensurePlayerBoost();
             if (!window.player) return;
             const dt = typeof window.deltaTime === 'number' ? window.deltaTime : 1;
-            if (isPointerDown && window.isThrusting && window.gameState === 'playing') {
+            if (isPointerDown && window.gameState === 'playing') {
                 const drainPerSecond = 1 / window.player.boostDrainSeconds;
                 window.player.boost = Math.max(0, window.player.boost - drainPerSecond * dt);
                 if (window.player.boost <= 0) {
-                    // prevent further thrust until release
-                    window.isThrusting = false;
+                    // Boost depleted - thrust is disabled by game.js boost check
                 }
             }
             // update DOM bar

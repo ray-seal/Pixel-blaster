@@ -733,9 +733,12 @@ function updateObstacles() {
 }
 
 function updatePlayer() {
-    // Apply thrust
+    // Apply thrust (check boost if available)
     if (isThrusting) {
-        player.velocityY = player.thrust;
+        const hasBoost = typeof player.boost === 'undefined' || player.boost > 0;
+        if (hasBoost) {
+            player.velocityY = player.thrust;
+        }
     }
     
     // Apply gravity (scaled by delta time for consistent physics)
