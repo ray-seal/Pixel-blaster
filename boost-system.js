@@ -84,8 +84,11 @@
             if (!window.player) return;
             const dt = typeof window.deltaTime === 'number' ? window.deltaTime : 1;
             if (isPointerDown && window.gameState === 'playing') {
-                const drainPerSecond = 1 / window.player.boostDrainSeconds;
-                window.player.boost = Math.max(0, window.player.boost - drainPerSecond * dt);
+                // Drain over boostDrainSeconds at 60 FPS
+                // deltaTime is normalized to 60fps (1.0 = one frame at 60fps)
+                const TARGET_FPS = 60;
+                const drainPerFrame = 1 / (window.player.boostDrainSeconds * TARGET_FPS);
+                window.player.boost = Math.max(0, window.player.boost - drainPerFrame * dt);
                 if (window.player.boost <= 0) {
                     // Boost depleted - thrust is disabled by game.js boost check
                 }
