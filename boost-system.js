@@ -82,6 +82,17 @@
         try {
             ensurePlayerBoost();
             if (!window.player) return;
+            
+            // Show/hide boost container based on game state
+            const boostContainer = document.getElementById('boostContainer');
+            if (boostContainer) {
+                if (window.gameState === 'playing') {
+                    boostContainer.classList.add('active');
+                } else {
+                    boostContainer.classList.remove('active');
+                }
+            }
+            
             const dt = typeof window.deltaTime === 'number' ? window.deltaTime : 1;
             if (isPointerDown && window.gameState === 'playing') {
                 // Drain over boostDrainSeconds at 60 FPS
