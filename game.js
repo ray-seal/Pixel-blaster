@@ -76,6 +76,7 @@ window.addEventListener('orientationchange', () => {
 
 // Game state
 let gameState = 'menu'; // menu, playing, gameOver
+window.gameState = gameState; // Expose for boost-system.js
 let score = 0;
 let highScore = localStorage.getItem('highScore') || 0;
 let gameSpeed = 2;
@@ -251,6 +252,7 @@ let enemyFireSpeed = 3; // Speed of enemy bullets
 // Delta time tracking for consistent game speed across devices
 let lastFrameTime = 0;
 let deltaTime = 0;
+window.deltaTime = deltaTime; // Expose for boost-system.js
 const TARGET_FPS = 60;
 const TARGET_FRAME_TIME = 1000 / TARGET_FPS; // 16.67ms per frame at 60 FPS
 
@@ -438,6 +440,7 @@ menuScreen.addEventListener('click', () => {
 // Game functions
 function startGame() {
     gameState = 'playing';
+    window.gameState = gameState;
     score = 0;
     distanceTraveled = 0;
     lastScoreMilestone = 0;
@@ -504,6 +507,7 @@ function startGame() {
 
 function gameOver() {
     gameState = 'gameOver';
+    window.gameState = gameState;
     hud.classList.remove('active');
     perkButtonsContainer.classList.remove('active');
     gameOverScreen.classList.add('active');
@@ -1327,6 +1331,7 @@ function gameLoop(timestamp) {
     
     // Cap delta time to prevent huge jumps (e.g., when tab loses focus)
     deltaTime = Math.min(deltaTime, 3);
+    window.deltaTime = deltaTime; // Update for boost-system.js
     
     // Clear canvas
     ctx.fillStyle = '#0a0a1a';
@@ -1536,6 +1541,7 @@ shopBtn.addEventListener('click', (e) => {
 
 backToMenuBtn.addEventListener('click', () => {
     gameState = 'menu';
+    window.gameState = gameState;
     upgradesMenu.classList.remove('active');
     menuScreen.classList.add('active');
     menuScreen.scrollTop = 0; // Reset scroll position
@@ -1559,6 +1565,7 @@ clearSelectionBtn.addEventListener('click', () => {
 
 mainMenuBtn.addEventListener('click', () => {
     gameState = 'menu';
+    window.gameState = gameState;
     gameOverScreen.classList.remove('active');
     menuScreen.classList.add('active');
     menuScreen.scrollTop = 0; // Reset scroll position
