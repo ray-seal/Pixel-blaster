@@ -438,8 +438,6 @@ menuScreen.addEventListener('click', () => {
 // Game functions
 function startGame() {
     window.gameState = 'playing';
-function startGame() {
-    window.gameState = 'playing';
     score = 0;
     distanceTraveled = 0;
     lastScoreMilestone = 0;
