@@ -15,9 +15,6 @@
         nextChange: Date.now() + 3000
     };
 
-    window._lastEdgeDamageTime = window._lastEdgeDamageTime || 0;
-    const EDGE_DAMAGE_COOLDOWN = 500;
-
     function spawnEdgeHazards() {
         const canvas = window.canvas;
         const minThickness = 8;
@@ -107,28 +104,17 @@
                 const canvas = window.canvas;
                 if (!player || !canvas) return res;
                 
-                const now = Date.now();
                 const ceilH = window.edgeHazards.ceilingThickness;
                 const floorH = window.edgeHazards.floorThickness;
 
                 if (player.y < ceilH) {
-                    if (now - window._lastEdgeDamageTime > EDGE_DAMAGE_COOLDOWN) {
-                        if (!player.invincible) {
-                            if (typeof window.takeDamage === 'function') window.takeDamage();
-                        }
-                        window._lastEdgeDamageTime = now;
-                    }
+                    // Push player back, no damage
                     player.y = Math.max(ceilH, player.y);
                     if (player.velocityY < 0) player.velocityY = 0;
                 }
 
                 if (player.y + player.height > canvas.height - floorH) {
-                    if (now - window._lastEdgeDamageTime > EDGE_DAMAGE_COOLDOWN) {
-                        if (!player.invincible) {
-                            if (typeof window.takeDamage === 'function') window.takeDamage();
-                        }
-                        window._lastEdgeDamageTime = now;
-                    }
+                    // Push player back, no damage
                     player.y = Math.min(canvas.height - floorH - player.height, player.y);
                     if (player.velocityY > 0) player.velocityY = 0;
                 }
