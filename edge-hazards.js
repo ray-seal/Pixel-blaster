@@ -1,6 +1,13 @@
 (function () {
-    if (typeof window.canvas === 'undefined' || typeof window.ctx === 'undefined') return;
-    if (typeof window.player === 'undefined') return;
+    // Wait for canvas, ctx, and player to be available
+    if (typeof window.canvas === 'undefined' || typeof window.ctx === 'undefined') {
+        console.warn('edge-hazards: canvas or ctx not available yet');
+        return;
+    }
+    if (typeof window.player === 'undefined') {
+        console.warn('edge-hazards: player not available yet');
+        return;
+    }
 
     window.edgeHazards = window.edgeHazards || {
         ceilingThickness: 8,
@@ -12,6 +19,7 @@
     const EDGE_DAMAGE_COOLDOWN = 500;
 
     function spawnEdgeHazards() {
+        const canvas = window.canvas;
         const minThickness = 8;
         const maxCandidate = Math.max(minThickness, Math.floor(canvas.height * 0.06));
         const ceil = minThickness + Math.floor(Math.random() * Math.max(1, maxCandidate - minThickness + 1));
@@ -22,6 +30,7 @@
     }
 
     function drawEdgeHazards() {
+        const canvas = window.canvas;
         const ctx = window.ctx;
         const width = canvas.width;
         const ceilH = window.edgeHazards.ceilingThickness;
@@ -94,6 +103,10 @@
             const res = _origCheckCollisions.apply(this, args);
 
             try {
+                const player = window.player;
+                const canvas = window.canvas;
+                if (!player || !canvas) return res;
+                
                 const now = Date.now();
                 const ceilH = window.edgeHazards.ceilingThickness;
                 const floorH = window.edgeHazards.floorThickness;
@@ -152,8 +165,11 @@
         const _origResize = window.resizeCanvas;
         window.resizeCanvas = function (...args) {
             const res = _origResize.apply(this, args);
-            window.edgeHazards.ceilingThickness = Math.max(8, Math.min(window.edgeHazards.ceilingThickness, Math.floor(canvas.height / 2)));
-            window.edgeHazards.floorThickness = Math.max(8, Math.min(window.edgeHazards.floorThickness, Math.floor(canvas.height / 2)));
+            const canvas = window.canvas;
+            if (canvas) {
+                window.edgeHazards.ceilingThickness = Math.max(8, Math.min(window.edgeHazards.ceilingThickness, Math.floor(canvas.height / 2)));
+                window.edgeHazards.floorThickness = Math.max(8, Math.min(window.edgeHazards.floorThickness, Math.floor(canvas.height / 2)));
+            }
             return res;
         };
     }

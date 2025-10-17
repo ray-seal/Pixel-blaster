@@ -277,6 +277,11 @@ const player = {
     hasShield: false
 };
 
+// Expose to window for edge-hazards.js
+window.canvas = canvas;
+window.ctx = ctx;
+window.player = player;
+
 // Color palettes for distance-based upgrades
 const playerColors = ['#00ff00', '#00ffff', '#ffff00', '#ff00ff', '#ff8800', '#00ff88'];
 const enemyBaseColors = ['#ff0066', '#ff3366', '#ff6600', '#ff00aa', '#cc00ff', '#ff0033'];
