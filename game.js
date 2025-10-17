@@ -75,7 +75,7 @@ window.addEventListener('orientationchange', () => {
 });
 
 // Game state
-let gameState = 'menu'; // menu, playing, gameOver
+window.gameState = 'menu'; // menu, playing, gameOver
 let score = 0;
 let highScore = localStorage.getItem('highScore') || 0;
 let gameSpeed = 2;
@@ -250,7 +250,7 @@ let enemyFireSpeed = 3; // Speed of enemy bullets
 
 // Delta time tracking for consistent game speed across devices
 let lastFrameTime = 0;
-let deltaTime = 0;
+window.deltaTime = 0;
 const TARGET_FPS = 60;
 const TARGET_FRAME_TIME = 1000 / TARGET_FPS; // 16.67ms per frame at 60 FPS
 
@@ -407,11 +407,11 @@ let isShooting = false;
 
 function handleStart(e) {
     e.preventDefault();
-    if (gameState === 'menu') {
+    if (window.gameState === 'menu') {
         startGame();
-    } else if (gameState === 'gameOver') {
+    } else if (window.gameState === 'gameOver') {
         startGame();
-    } else if (gameState === 'playing') {
+    } else if (window.gameState === 'playing') {
         isThrusting = true;
         isShooting = true;
     }
@@ -419,7 +419,7 @@ function handleStart(e) {
 
 function handleEnd(e) {
     e.preventDefault();
-    if (gameState === 'playing') {
+    if (window.gameState === 'playing') {
         isThrusting = false;
         isShooting = false;
     }
@@ -432,12 +432,12 @@ canvas.addEventListener('mousedown', handleStart);
 canvas.addEventListener('mouseup', handleEnd);
 
 menuScreen.addEventListener('click', () => {
-    if (gameState === 'menu') startGame();
+    if (window.gameState === 'menu') startGame();
 });
 
 // Game functions
 function startGame() {
-    gameState = 'playing';
+    window.gameState = 'playing';
     score = 0;
     distanceTraveled = 0;
     lastScoreMilestone = 0;
@@ -503,7 +503,7 @@ function startGame() {
 }
 
 function gameOver() {
-    gameState = 'gameOver';
+    window.gameState = 'gameOver';
     hud.classList.remove('active');
     perkButtonsContainer.classList.remove('active');
     gameOverScreen.classList.add('active');
@@ -687,8 +687,8 @@ function updateLootEffects() {
 function updateLootDrops() {
     for (let i = lootDrops.length - 1; i >= 0; i--) {
         const loot = lootDrops[i];
-        loot.x -= loot.speed * deltaTime;
-        loot.rotation += 0.05 * deltaTime; // Rotate for visual effect (scaled by delta time)
+        loot.x -= loot.speed * window.deltaTime;
+        loot.rotation += 0.05 * window.deltaTime; // Rotate for visual effect (scaled by delta time)
         
         // Remove off-screen loot
         if (loot.x + loot.width < 0) {
@@ -723,7 +723,7 @@ function updateObstacles() {
     // Update and remove obstacles (movement scaled by delta time)
     for (let i = obstacles.length - 1; i >= 0; i--) {
         const obstacle = obstacles[i];
-        obstacle.x -= obstacle.speed * deltaTime;
+        obstacle.x -= obstacle.speed * window.deltaTime;
         
         // Remove off-screen obstacles
         if (obstacle.x + obstacle.width < 0) {
@@ -733,14 +733,17 @@ function updateObstacles() {
 }
 
 function updatePlayer() {
-    // Apply thrust
+    // Apply thrust (check boost if available)
     if (isThrusting) {
-        player.velocityY = player.thrust;
+        const hasBoost = typeof player.boost === 'undefined' || player.boost > 0;
+        if (hasBoost) {
+            player.velocityY = player.thrust;
+        }
     }
     
     // Apply gravity (scaled by delta time for consistent physics)
-    player.velocityY += player.gravity * deltaTime;
-    player.y += player.velocityY * deltaTime;
+    player.velocityY += player.gravity * window.deltaTime;
+    player.y += player.velocityY * window.deltaTime;
     
     // Screen boundaries
     if (player.y < 0) {
@@ -772,7 +775,7 @@ function updatePlayer() {
         player.shootCooldown = baseShootCooldown;
     }
     if (player.shootCooldown > 0) {
-        player.shootCooldown -= deltaTime;
+        player.shootCooldown -= window.deltaTime;
     }
 }
 
@@ -786,7 +789,7 @@ function updateTunnels() {
     // Update and remove tunnels (movement scaled by delta time)
     for (let i = tunnels.length - 1; i >= 0; i--) {
         const tunnel = tunnels[i];
-        tunnel.x -= gameSpeed * deltaTime;
+        tunnel.x -= gameSpeed * window.deltaTime;
         
         // Check if player passed tunnel
         if (!tunnel.passed && player.x > tunnel.x + tunnel.width) {
@@ -811,11 +814,11 @@ function updateEnemies() {
     // Update enemies (movement scaled by delta time)
     for (let i = enemies.length - 1; i >= 0; i--) {
         const enemy = enemies[i];
-        enemy.x -= enemy.speed * deltaTime;
+        enemy.x -= enemy.speed * window.deltaTime;
         
         // Handle shooting enemies
         if (enemy.canShoot && enemy.shootCooldown > 0) {
-            enemy.shootCooldown -= deltaTime;
+            enemy.shootCooldown -= window.deltaTime;
         }
         
         if (enemy.canShoot && enemy.shootCooldown <= 0 && enemy.x < canvas.width - 100) {
@@ -833,7 +836,7 @@ function updateEnemies() {
 function updateBullets() {
     for (let i = bullets.length - 1; i >= 0; i--) {
         const bullet = bullets[i];
-        bullet.x += bullet.speed * deltaTime;
+        bullet.x += bullet.speed * window.deltaTime;
         
         // Remove off-screen bullets
         if (bullet.x > canvas.width) {
@@ -845,7 +848,7 @@ function updateBullets() {
 function updateEnemyBullets() {
     for (let i = enemyBullets.length - 1; i >= 0; i--) {
         const bullet = enemyBullets[i];
-        bullet.x -= bullet.speed * deltaTime;
+        bullet.x -= bullet.speed * window.deltaTime;
         
         // Remove off-screen bullets
         if (bullet.x + bullet.width < 0) {
@@ -857,8 +860,8 @@ function updateEnemyBullets() {
 function updateCoins() {
     for (let i = coins_on_screen.length - 1; i >= 0; i--) {
         const coin = coins_on_screen[i];
-        coin.x -= coin.speed * deltaTime;
-        coin.rotation += 0.1 * deltaTime;
+        coin.x -= coin.speed * window.deltaTime;
+        coin.rotation += 0.1 * window.deltaTime;
         
         // Remove off-screen coins
         if (coin.x + coin.width < 0) {
@@ -870,9 +873,9 @@ function updateCoins() {
 function updateParticles() {
     for (let i = particles.length - 1; i >= 0; i--) {
         const particle = particles[i];
-        particle.x += particle.vx * deltaTime;
-        particle.y += particle.vy * deltaTime;
-        particle.life -= deltaTime;
+        particle.x += particle.vx * window.deltaTime;
+        particle.y += particle.vy * window.deltaTime;
+        particle.life -= window.deltaTime;
         
         if (particle.life <= 0) {
             particles.splice(i, 1);
@@ -1027,8 +1030,8 @@ function takeDamage() {
 }
 
 function updateScore() {
-    distanceTraveled += gameSpeed * deltaTime;
-    score += 0.1 * deltaTime; // Gradual score increase for distance (scaled by delta time)
+    distanceTraveled += gameSpeed * window.deltaTime;
+    score += 0.1 * window.deltaTime; // Gradual score increase for distance (scaled by delta time)
     
     // Check for score milestones (every 1000 points)
     const currentMilestone = Math.floor(score / 1000);
@@ -1062,7 +1065,7 @@ function updateScore() {
     // Every 1000 units of distance traveled:
     // - Game speed increases by 0.1 (capped at 5)
     // - Enemy spawn rate increases by 0.0025 (capped at 0.025 for max 2.5% spawn chance)
-    if (distanceTraveled % 1000 < gameSpeed * deltaTime) {
+    if (distanceTraveled % 1000 < gameSpeed * window.deltaTime) {
         gameSpeed = Math.min(gameSpeed + 0.1, 5);
         enemySpawnRate = Math.min(enemySpawnRate + 0.0025, 0.025);
     }
@@ -1320,20 +1323,20 @@ function gameLoop(timestamp) {
     
     // Calculate delta multiplier normalized to 60 FPS
     // This ensures consistent game speed regardless of actual frame rate
-    deltaTime = frameTime / TARGET_FRAME_TIME;
+    window.deltaTime = frameTime / TARGET_FRAME_TIME;
     
     // Cap delta time to prevent huge jumps (e.g., when tab loses focus)
-    deltaTime = Math.min(deltaTime, 3);
+    window.deltaTime = Math.min(window.deltaTime, 3);
     
     // Clear canvas
     ctx.fillStyle = '#0a0a1a';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    if (gameState === 'playing') {
+    if (window.gameState === 'playing') {
         // Draw stars background
         drawStars();
         
-        // Update (all update functions now use deltaTime for consistent speed)
+        // Update (all update functions now use window.deltaTime for consistent speed)
         updatePlayer();
         updateTunnels();
         updateEnemies();
@@ -1532,7 +1535,7 @@ shopBtn.addEventListener('click', (e) => {
 });
 
 backToMenuBtn.addEventListener('click', () => {
-    gameState = 'menu';
+    window.gameState = 'menu';
     upgradesMenu.classList.remove('active');
     menuScreen.classList.add('active');
     menuScreen.scrollTop = 0; // Reset scroll position
@@ -1555,7 +1558,7 @@ clearSelectionBtn.addEventListener('click', () => {
 });
 
 mainMenuBtn.addEventListener('click', () => {
-    gameState = 'menu';
+    window.gameState = 'menu';
     gameOverScreen.classList.remove('active');
     menuScreen.classList.add('active');
     menuScreen.scrollTop = 0; // Reset scroll position
@@ -1804,7 +1807,7 @@ function updatePerkButtons() {
         }
     }
     
-    if (hasPerks && gameState === 'playing') {
+    if (hasPerks && window.gameState === 'playing') {
         perkButtonsContainer.classList.add('active');
     } else {
         perkButtonsContainer.classList.remove('active');
@@ -1812,7 +1815,7 @@ function updatePerkButtons() {
 }
 
 function usePerk(perkId) {
-    if (gameState !== 'playing') return;
+    if (window.gameState !== 'playing') return;
     if (!purchasedPerks[perkId] || purchasedPerks[perkId] <= 0) return;
     
     const perk = PERK_DEFINITIONS[perkId];
