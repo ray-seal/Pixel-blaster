@@ -59,28 +59,20 @@
     let isPointerDown = false;
 
     function onPressStart(e) {
-        try { e.preventDefault(); } catch {}
         isPointerDown = true;
-        if (typeof window.isThrusting !== 'undefined' && window.gameState === 'playing') {
-            window.isThrusting = true;
-            window.isShooting = true;
-        }
     }
     function onPressEnd(e) {
-        try { e.preventDefault(); } catch {}
         isPointerDown = false;
         // instant refill on release
         try { if (window.player) window.player.boost = window.player.boostMax; } catch (e) {}
-        if (typeof window.isThrusting !== 'undefined') window.isThrusting = false;
-        if (typeof window.isShooting !== 'undefined') window.isShooting = false;
     }
 
-    // Wire to canvas if present
+    // Wire to canvas if present - these run AFTER game.js handlers
     try {
         const c = document.getElementById('gameCanvas');
         if (c) {
-            c.addEventListener('touchstart', onPressStart, {passive:false});
-            c.addEventListener('touchend', onPressEnd, {passive:false});
+            c.addEventListener('touchstart', onPressStart, {passive:true});
+            c.addEventListener('touchend', onPressEnd, {passive:true});
             c.addEventListener('mousedown', onPressStart);
             c.addEventListener('mouseup', onPressEnd);
         }
