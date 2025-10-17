@@ -1,0 +1,60 @@
+/* UI tweaks: boxed off perk/powerup panel and subtle transparency for HUD elements. */
+#perkPanel {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(2, 6, 12, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    backdrop-filter: blur(6px);
+    z-index: 30;
+    pointer-events: auto;
+    min-width: 64px;
+    max-width: 110px;
+}
+
+#perkPanel .perk-btn,
+#perkPanel button.perk-btn {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 6px 8px;
+    font-size: 0.85rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#perkPanel .perk-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+}
+
+#hud.active {
+    opacity: 0.95;
+}
+
+@media (max-width: 640px) {
+    #perkPanel {
+        right: 50%;
+        transform: translate(50%, 0);
+        top: auto;
+        bottom: 10px;
+        flex-direction: row;
+        padding: 6px;
+        max-width: calc(100% - 24px);
+    }
+    #perkPanel .perk-btn {
+        padding: 6px;
+        font-size: 0.8rem;
+    }
+}
