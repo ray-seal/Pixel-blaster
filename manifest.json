@@ -2,7 +2,7 @@
   "name": "Pixel Blaster",
   "short_name": "PixelBlaster",
   "description": "A retro side-scrolling space shooter game - Play offline anytime!",
-  "start_url": "/index.html",
+  "start_url": "/?homescreen=1",
   "scope": "/",
   "display": "standalone",
   "orientation": "landscape",
@@ -12,13 +12,13 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "icon-512.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
