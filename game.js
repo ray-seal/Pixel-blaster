@@ -750,10 +750,9 @@ function updatePlayer() {
         player.y = 0;
         player.velocityY = 0;
     }
+    // Check if player falls out the bottom
     if (player.y + player.height > canvas.height) {
-        player.y = canvas.height - player.height;
-        player.velocityY = 0;
-        takeDamage();
+        gameOver();
     }
     
     // Shooting (cooldown scaled by delta time)

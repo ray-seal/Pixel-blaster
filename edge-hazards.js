@@ -31,27 +31,20 @@
         const ctx = window.ctx;
         const width = canvas.width;
         const ceilH = window.edgeHazards.ceilingThickness;
-        const floorH = window.edgeHazards.floorThickness;
 
+        // Draw ceiling only
         const g1 = ctx.createLinearGradient(0, 0, 0, Math.max(ceilH, 1));
         g1.addColorStop(0, 'rgba(120, 180, 255, 0.22)');
         g1.addColorStop(1, 'rgba(120, 180, 255, 0.06)');
         ctx.fillStyle = g1;
         ctx.fillRect(0, 0, width, ceilH);
 
-        const g2 = ctx.createLinearGradient(0, canvas.height - Math.max(floorH, 1), 0, canvas.height);
-        g2.addColorStop(0, 'rgba(120, 180, 255, 0.06)');
-        g2.addColorStop(1, 'rgba(120, 180, 255, 0.22)');
-        ctx.fillStyle = g2;
-        ctx.fillRect(0, canvas.height - floorH, width, floorH);
-
+        // Add sparkles to ceiling only
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
         for (let i = 0; i < 6; i++) {
             const x = Math.floor(Math.random() * width);
             const y = Math.floor(Math.random() * ceilH);
             ctx.fillRect(x, y, 1, 1);
-            const y2 = canvas.height - Math.floor(Math.random() * floorH) - 1;
-            ctx.fillRect(x, y2, 1, 1);
         }
     }
 
@@ -105,18 +98,12 @@
                 if (!player || !canvas) return res;
                 
                 const ceilH = window.edgeHazards.ceilingThickness;
-                const floorH = window.edgeHazards.floorThickness;
 
+                // Only handle ceiling collision, not floor
                 if (player.y < ceilH) {
                     // Push player back, no damage
                     player.y = Math.max(ceilH, player.y);
                     if (player.velocityY < 0) player.velocityY = 0;
-                }
-
-                if (player.y + player.height > canvas.height - floorH) {
-                    // Push player back, no damage
-                    player.y = Math.min(canvas.height - floorH - player.height, player.y);
-                    if (player.velocityY > 0) player.velocityY = 0;
                 }
             } catch (e) {
                 console.warn('edge collision error', e);
