@@ -1,0 +1,28 @@
+name: Supabase Heartbeat
+
+on:
+  schedule:
+    - cron: '0 0 */6 * *' # every 6 days at 00:00 UTC
+  workflow_dispatch:
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Heartbeat: send a minimal request to Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          # Fail fast if secrets aren't set so the repo owner can see the workflow log
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_KEY" ]; then
+            echo "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY secrets. See .github/HEARTBEAT.md for setup instructions."
+            exit 1
+          fi
+
+          echo "Pinging $SUPABASE_URL ..."
+          # Send a lightweight GET request with the service role key in headers. This reaches your Supabase project and counts as activity.
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $SUPABASE_KEY" -H "apikey: $SUPABASE_KEY" "$SUPABASE_URL")
+          echo "HTTP status: $HTTP_CODE"
+          # Keep the job successful regardless of returned status code; presence of a request is the goal.
+          exit 0
