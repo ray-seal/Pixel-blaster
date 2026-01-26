@@ -5,8 +5,8 @@
 // IMPORTANT: Increment version number (v4 -> v5 -> v6, etc.) for EVERY new deployment
 // This ensures users get the latest code without manual cache clearing
 // The version change triggers update detection in the main app (game.js)
-const CACHE_NAME = 'pixel-blaster-v5';
-const RUNTIME_CACHE = 'pixel-blaster-runtime-v5';
+const CACHE_NAME = 'pixel-blaster-v6';
+const RUNTIME_CACHE = 'pixel-blaster-runtime-v6';
 
 // All assets needed for offline play
 const urlsToCache = [
@@ -67,8 +67,19 @@ self.addEventListener('fetch', event => {
   const url = new URL(request.url);
 
   // Allow Supabase API calls to pass through (don't cache)
+  // Use catch to handle network errors gracefully
   if (url.origin.includes('supabase.co') || url.origin.includes('jsdelivr.net')) {
-    event.respondWith(fetch(request));
+    event.respondWith(
+      fetch(request).catch(error => {
+        console.error('Service Worker: Network request failed for', request.url, error);
+        // Return a basic error response instead of letting it fail silently
+        return new Response(JSON.stringify({ error: 'Network request failed' }), {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'application/json' }
+        });
+      })
+    );
     return;
   }
 

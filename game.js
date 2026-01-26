@@ -21,25 +21,183 @@ const backToMenuFromScores = document.getElementById('backToMenuFromScores');
 const SUPABASE_URL = 'https://qxocafbohchpfqndiibj.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4b2NhZmJvaGNocGZxbmRpaWJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzNDk2MDgsImV4cCI6MjA3NTkyNTYwOH0.5ZadVcRbXGqBqYd838wWl8Xifzv0HjiPLmCTsygsRJc';
 let supabase = null;
+let supabaseConnectionStatus = 'unknown'; // 'unknown', 'connected', 'error', 'offline'
+let supabaseLastChecked = 0;
+
+// Retry configuration for exponential backoff
+const RETRY_CONFIG = {
+    maxRetries: 3,
+    initialDelay: 1000, // 1 second
+    maxDelay: 10000, // 10 seconds
+    backoffMultiplier: 2
+};
+
+// Connection test configuration
+const CONNECTION_TEST_CACHE_TIME = 30000; // 30 seconds - don't test too frequently
+const CONNECTION_TEST_TIMEOUT = 5000; // 5 seconds - timeout for connection tests
+
+// Validate Supabase JWT token
+function validateSupabaseKey() {
+    try {
+        const parts = SUPABASE_KEY.split('.');
+        if (parts.length !== 3) {
+            console.error('✗ Invalid Supabase key format (not a JWT)');
+            return false;
+        }
+        
+        // Decode the payload (without verification - just checking format and expiry)
+        // Handle base64url encoding by replacing URL-safe characters
+        let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        // Add padding if needed
+        while (base64.length % 4) {
+            base64 += '=';
+        }
+        const payload = JSON.parse(atob(base64));
+        
+        if (!payload.exp) {
+            console.warn('⚠ Supabase key has no expiration (unexpected)');
+            return true; // Still proceed
+        }
+        
+        const expiryDate = new Date(payload.exp * 1000);
+        const now = new Date();
+        
+        if (expiryDate <= now) {
+            console.error('✗ Supabase key has expired on', expiryDate.toISOString());
+            console.error('  Please update SUPABASE_KEY in game.js with a new key from your Supabase dashboard');
+            return false;
+        }
+        
+        const daysUntilExpiry = Math.floor((expiryDate - now) / (1000 * 60 * 60 * 24));
+        console.log(`✓ Supabase key is valid (expires in ${daysUntilExpiry} days)`);
+        return true;
+        
+    } catch (err) {
+        console.error('✗ Failed to validate Supabase key:', err.message);
+        return false;
+    }
+}
 
 // Initialize Supabase when available
 function initSupabase() {
     if (typeof window.supabase !== 'undefined') {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        console.log('Supabase initialized');
-        return true;
+        // Validate the key first
+        if (!validateSupabaseKey()) {
+            console.error('✗ Supabase initialization aborted due to invalid key');
+            supabaseConnectionStatus = 'error';
+            return false;
+        }
+        
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            console.log('✓ Supabase client initialized');
+            return true;
+        } catch (err) {
+            console.error('✗ Failed to initialize Supabase client:', err);
+            supabaseConnectionStatus = 'error';
+            return false;
+        }
     }
+    console.warn('⚠ Supabase library not loaded');
     return false;
+}
+
+// Test Supabase connection with timeout
+async function testSupabaseConnection() {
+    if (!supabase) {
+        if (!initSupabase()) {
+            supabaseConnectionStatus = 'error';
+            return false;
+        }
+    }
+    
+    // Don't check too frequently (cache for configured time)
+    const now = Date.now();
+    if (now - supabaseLastChecked < CONNECTION_TEST_CACHE_TIME && supabaseConnectionStatus !== 'unknown') {
+        return supabaseConnectionStatus === 'connected';
+    }
+    
+    supabaseLastChecked = now;
+    
+    try {
+        console.log('Testing Supabase connection...');
+        
+        // Create a timeout promise
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Connection timeout')), CONNECTION_TEST_TIMEOUT);
+        });
+        
+        // Test connection with a simple query
+        const queryPromise = supabase
+            .from('high_scores')
+            .select('id', { count: 'exact', head: true })
+            .limit(1);
+        
+        // Race between query and timeout - handle both success and timeout
+        const result = await Promise.race([
+            queryPromise.then(res => ({ success: true, data: res })),
+            timeoutPromise.catch(err => ({ success: false, error: err }))
+        ]);
+        
+        if (!result.success || result.data?.error) {
+            const errorMsg = result.error?.message || result.data?.error?.message || 'Unknown error';
+            console.error('✗ Supabase connection test failed:', errorMsg);
+            supabaseConnectionStatus = 'error';
+            return false;
+        }
+            return false;
+        }
+        
+        console.log('✓ Supabase connection successful');
+        supabaseConnectionStatus = 'connected';
+        return true;
+    } catch (err) {
+        console.error('✗ Supabase connection error:', err.message);
+        supabaseConnectionStatus = 'error';
+        return false;
+    }
+}
+
+// Retry function with exponential backoff
+async function retryWithBackoff(fn, context = '', retryCount = 0) {
+    try {
+        return await fn();
+    } catch (error) {
+        if (retryCount >= RETRY_CONFIG.maxRetries) {
+            console.error(`✗ ${context} failed after ${RETRY_CONFIG.maxRetries} retries:`, error.message);
+            throw error;
+        }
+        
+        const delay = Math.min(
+            RETRY_CONFIG.initialDelay * Math.pow(RETRY_CONFIG.backoffMultiplier, retryCount),
+            RETRY_CONFIG.maxDelay
+        );
+        
+        const retryNum = retryCount + 1;
+        console.warn(`⚠ ${context} failed (retry ${retryNum}/${RETRY_CONFIG.maxRetries}), waiting ${delay}ms...`);
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return retryWithBackoff(fn, context, retryCount + 1);
+    }
 }
 
 // Online/offline status
 let isOnline = navigator.onLine;
-window.addEventListener('online', () => {
+window.addEventListener('online', async () => {
+    console.log('🌐 Network connection restored');
     isOnline = true;
-    syncQueuedScores();
+    supabaseConnectionStatus = 'unknown'; // Reset status to recheck
+    
+    // Test connection and sync scores
+    const connected = await testSupabaseConnection();
+    if (connected) {
+        syncQueuedScores();
+    }
 });
 window.addEventListener('offline', () => {
+    console.log('📴 Network connection lost - switching to offline mode');
     isOnline = false;
+    supabaseConnectionStatus = 'offline';
 });
 
 // Queued scores for offline support
@@ -93,35 +251,59 @@ async function addHighScore(name, score, distance) {
         distance: Math.floor(distance)
     };
     
-    // Update local cache
+    // Update local cache immediately
     globalHighScores.push(highScoreEntry);
     globalHighScores.sort((a, b) => b.score - a.score);
     globalHighScores = globalHighScores.slice(0, 20); // Keep top 20
     localStorage.setItem('globalHighScores', JSON.stringify(globalHighScores));
+    console.log('✓ High score saved locally:', highScoreEntry);
     
-    // Try to submit to Supabase if available
-    if (!supabase) initSupabase();
+    // Try to submit to Supabase if online
+    if (!isOnline) {
+        console.log('📴 Offline - score queued for later sync');
+        queueScore(highScoreEntry);
+        return;
+    }
     
-    if (isOnline && supabase) {
-        try {
-            const { error } = await supabase
+    if (!supabase) {
+        if (!initSupabase()) {
+            console.warn('⚠ Supabase not available - score queued for later sync');
+            queueScore(highScoreEntry);
+            return;
+        }
+    }
+    
+    try {
+        console.log('📤 Submitting high score to global leaderboard...');
+        
+        await retryWithBackoff(async () => {
+            const { data, error } = await supabase
                 .from('high_scores')
-                .insert([highScoreEntry]);
+                .insert([highScoreEntry])
+                .select();
             
             if (error) {
-                console.error('Error submitting high score:', error);
-                queueScore(highScoreEntry);
-            } else {
-                console.log('High score submitted successfully!');
-                // Refresh high scores after submission
-                await fetchGlobalHighScores();
+                throw new Error(`Supabase insert error: ${error.message}`);
             }
-        } catch (err) {
-            console.error('Network error submitting high score:', err);
-            queueScore(highScoreEntry);
-        }
-    } else {
+            
+            return data;
+        }, 'High score submission');
+        
+        console.log('✓ High score submitted successfully to global leaderboard!');
+        supabaseConnectionStatus = 'connected';
+        
+        // Refresh high scores after successful submission
+        await fetchGlobalHighScores();
+        
+    } catch (err) {
+        console.error('✗ Failed to submit high score after retries:', err.message);
+        console.log('📥 Score queued for later sync');
         queueScore(highScoreEntry);
+        
+        // Update connection status
+        if (err.message.includes('timeout') || err.message.includes('network')) {
+            supabaseConnectionStatus = 'error';
+        }
     }
 }
 
@@ -134,70 +316,111 @@ function queueScore(scoreEntry) {
 async function syncQueuedScores() {
     if (!isOnline || queuedScores.length === 0) return;
     
-    if (!supabase) initSupabase();
-    if (!supabase) return;
+    if (!supabase) {
+        if (!initSupabase()) {
+            console.warn('⚠ Cannot sync - Supabase not available');
+            return;
+        }
+    }
     
-    console.log(`Syncing ${queuedScores.length} queued score(s)...`);
+    // Test connection before attempting sync
+    const connected = await testSupabaseConnection();
+    if (!connected) {
+        console.warn('⚠ Cannot sync - Supabase connection test failed');
+        return;
+    }
+    
+    console.log(`🔄 Syncing ${queuedScores.length} queued score(s)...`);
     const scoresToSync = [...queuedScores];
+    const failedScores = [];
+    
+    // Clear queue temporarily
     queuedScores = [];
     localStorage.setItem('queuedScores', JSON.stringify(queuedScores));
     
     for (const scoreEntry of scoresToSync) {
         try {
-            const { error } = await supabase
-                .from('high_scores')
-                .insert([scoreEntry]);
+            await retryWithBackoff(async () => {
+                const { error } = await supabase
+                    .from('high_scores')
+                    .insert([scoreEntry]);
+                
+                if (error) {
+                    throw new Error(`Supabase insert error: ${error.message}`);
+                }
+            }, `Syncing score for ${scoreEntry.name}`);
             
-            if (error) {
-                console.error('Error syncing queued score:', error);
-                queuedScores.push(scoreEntry);
-            }
+            console.log(`✓ Synced score for ${scoreEntry.name}: ${scoreEntry.score}`);
+            
         } catch (err) {
-            console.error('Network error syncing queued score:', err);
-            queuedScores.push(scoreEntry);
+            console.error(`✗ Failed to sync score for ${scoreEntry.name}:`, err.message);
+            failedScores.push(scoreEntry);
         }
     }
     
     // Save any failed scores back to queue
-    if (queuedScores.length > 0) {
+    if (failedScores.length > 0) {
+        console.warn(`⚠ ${failedScores.length} score(s) remain in queue`);
+        queuedScores = failedScores;
         localStorage.setItem('queuedScores', JSON.stringify(queuedScores));
+    } else {
+        console.log('✓ All queued scores synced successfully!');
     }
     
     // Refresh high scores after sync
-    await fetchGlobalHighScores();
+    if (failedScores.length < scoresToSync.length) {
+        await fetchGlobalHighScores();
+    }
 }
 
 async function fetchGlobalHighScores() {
     if (!isOnline) {
-        console.log('Offline - using cached high scores');
+        console.log('📴 Offline - using cached high scores');
+        supabaseConnectionStatus = 'offline';
         return;
     }
     
-    if (!supabase) initSupabase();
     if (!supabase) {
-        console.log('Supabase not available - using cached high scores');
-        return;
+        if (!initSupabase()) {
+            console.log('⚠ Supabase not available - using cached high scores');
+            return;
+        }
     }
     
     try {
-        const { data, error } = await supabase
-            .from('high_scores')
-            .select('name, score, distance, created_at')
-            .order('score', { ascending: false })
-            .limit(20);
+        console.log('📥 Fetching global high scores...');
         
-        if (error) {
-            console.error('Error fetching high scores:', error);
-            return;
-        }
+        const data = await retryWithBackoff(async () => {
+            const { data, error } = await supabase
+                .from('high_scores')
+                .select('name, score, distance, created_at')
+                .order('score', { ascending: false })
+                .limit(20);
+            
+            if (error) {
+                throw new Error(`Supabase fetch error: ${error.message}`);
+            }
+            
+            return data;
+        }, 'Fetch high scores');
         
         if (data && data.length > 0) {
             globalHighScores = data;
             localStorage.setItem('globalHighScores', JSON.stringify(globalHighScores));
-            console.log('High scores fetched from Supabase:', data.length);
+            console.log(`✓ Fetched ${data.length} high scores from global leaderboard`);
+            supabaseConnectionStatus = 'connected';
+        } else {
+            console.log('ℹ No high scores found in database');
         }
+        
     } catch (err) {
-        console.error('Network error fetching high scores:', err);
+        console.error('✗ Failed to fetch high scores after retries:', err.message);
+        console.log('📦 Using cached high scores');
+        
+        // Update connection status
+        if (err.message.includes('timeout') || err.message.includes('network')) {
+            supabaseConnectionStatus = 'error';
+        }
     }
 }
 
@@ -208,8 +431,47 @@ function isHighScore(score) {
 
 function displayHighScores() {
     highScoreList.innerHTML = '';
+    
+    // Add connection status indicator
+    const statusDiv = document.createElement('div');
+    statusDiv.style.cssText = 'text-align: center; padding: 10px; margin-bottom: 10px; font-size: 0.9rem; border-radius: 5px;';
+    
+    let statusIcon = '';
+    let statusText = '';
+    let statusColor = '';
+    
+    if (!isOnline) {
+        statusIcon = '📴';
+        statusText = 'Offline Mode - Showing cached scores';
+        statusColor = '#888';
+    } else if (supabaseConnectionStatus === 'connected') {
+        statusIcon = '🌐';
+        statusText = 'Global Leaderboard - Online';
+        statusColor = '#00ff00';
+    } else if (supabaseConnectionStatus === 'error') {
+        statusIcon = '⚠';
+        statusText = 'Connection Issues - Showing cached scores';
+        statusColor = '#ffaa00';
+    } else {
+        statusIcon = '🔄';
+        statusText = 'Checking connection...';
+        statusColor = '#888';
+    }
+    
+    statusDiv.innerHTML = `<span style="color: ${statusColor};">${statusIcon} ${statusText}</span>`;
+    
+    // Add queued scores indicator if any
+    if (queuedScores.length > 0) {
+        const queuedDiv = document.createElement('div');
+        queuedDiv.style.cssText = 'text-align: center; padding: 5px; font-size: 0.85rem; color: #ffaa00;';
+        queuedDiv.textContent = `📥 ${queuedScores.length} score(s) queued for sync`;
+        statusDiv.appendChild(queuedDiv);
+    }
+    
+    highScoreList.appendChild(statusDiv);
+    
     if (globalHighScores.length === 0) {
-        highScoreList.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">No high scores yet. Be the first!</p>';
+        highScoreList.innerHTML += '<p style="color: #888; text-align: center; padding: 20px;">No high scores yet. Be the first!</p>';
         return;
     }
     
@@ -1843,9 +2105,23 @@ function usePerk(perkId) {
 
 // Initialize high scores and sync on page load
 (async function initializeHighScores() {
+    console.log('🚀 Initializing Pixel Blaster...');
+    
+    // Initialize Supabase client
     initSupabase();
+    
+    // Test connection if online
+    if (isOnline) {
+        await testSupabaseConnection();
+    }
+    
+    // Fetch high scores (will use cache if connection fails)
     await fetchGlobalHighScores();
+    
+    // Sync any queued scores
     await syncQueuedScores();
+    
+    console.log('✓ Initialization complete');
 })();
 
 // Service worker registration for PWA offline support with update notification
