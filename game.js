@@ -32,6 +32,10 @@ const RETRY_CONFIG = {
     backoffMultiplier: 2
 };
 
+// Connection test configuration
+const CONNECTION_TEST_CACHE_TIME = 30000; // 30 seconds - don't test too frequently
+const CONNECTION_TEST_TIMEOUT = 5000; // 5 seconds - timeout for connection tests
+
 // Validate Supabase JWT token
 function validateSupabaseKey() {
     try {
@@ -42,7 +46,13 @@ function validateSupabaseKey() {
         }
         
         // Decode the payload (without verification - just checking format and expiry)
-        const payload = JSON.parse(atob(parts[1]));
+        // Handle base64url encoding by replacing URL-safe characters
+        let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        // Add padding if needed
+        while (base64.length % 4) {
+            base64 += '=';
+        }
+        const payload = JSON.parse(atob(base64));
         
         if (!payload.exp) {
             console.warn('⚠ Supabase key has no expiration (unexpected)');
@@ -101,9 +111,9 @@ async function testSupabaseConnection() {
         }
     }
     
-    // Don't check too frequently (cache for 30 seconds)
+    // Don't check too frequently (cache for configured time)
     const now = Date.now();
-    if (now - supabaseLastChecked < 30000 && supabaseConnectionStatus !== 'unknown') {
+    if (now - supabaseLastChecked < CONNECTION_TEST_CACHE_TIME && supabaseConnectionStatus !== 'unknown') {
         return supabaseConnectionStatus === 'connected';
     }
     
@@ -114,7 +124,7 @@ async function testSupabaseConnection() {
         
         // Create a timeout promise
         const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Connection timeout')), 5000);
+            setTimeout(() => reject(new Error('Connection timeout')), CONNECTION_TEST_TIMEOUT);
         });
         
         // Test connection with a simple query
@@ -123,11 +133,18 @@ async function testSupabaseConnection() {
             .select('id', { count: 'exact', head: true })
             .limit(1);
         
-        const { error } = await Promise.race([queryPromise, timeoutPromise]);
+        // Race between query and timeout - handle both success and timeout
+        const result = await Promise.race([
+            queryPromise.then(res => ({ success: true, data: res })),
+            timeoutPromise.catch(err => ({ success: false, error: err }))
+        ]);
         
-        if (error) {
-            console.error('✗ Supabase connection test failed:', error.message);
+        if (!result.success || result.data?.error) {
+            const errorMsg = result.error?.message || result.data?.error?.message || 'Unknown error';
+            console.error('✗ Supabase connection test failed:', errorMsg);
             supabaseConnectionStatus = 'error';
+            return false;
+        }
             return false;
         }
         
@@ -156,7 +173,8 @@ async function retryWithBackoff(fn, context = '', retryCount = 0) {
             RETRY_CONFIG.maxDelay
         );
         
-        console.warn(`⚠ ${context} attempt ${retryCount + 1} failed, retrying in ${delay}ms...`);
+        const retryNum = retryCount + 1;
+        console.warn(`⚠ ${context} failed (retry ${retryNum}/${RETRY_CONFIG.maxRetries}), waiting ${delay}ms...`);
         
         await new Promise(resolve => setTimeout(resolve, delay));
         return retryWithBackoff(fn, context, retryCount + 1);
