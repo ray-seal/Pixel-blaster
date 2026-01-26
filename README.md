@@ -176,6 +176,71 @@ The game includes a global high score system powered by Supabase. If you want to
 
 **Note**: The game works perfectly offline without Supabase. Scores are cached locally and synced when online.
 
+### Troubleshooting Supabase Connection
+
+If you experience issues with the global leaderboard:
+
+#### Connection Status Indicators
+The high score screen shows the current connection status:
+- 🌐 **Global Leaderboard - Online**: Connected successfully to Supabase
+- ⚠ **Connection Issues**: Supabase is unavailable, showing cached scores
+- 📴 **Offline Mode**: No internet connection, showing cached scores
+- 📥 **Scores queued**: You have scores that will sync when connection is restored
+
+#### Common Issues
+
+**Supabase Service Paused**
+- Free tier Supabase projects pause after 1 week of inactivity
+- Solution: Visit your Supabase dashboard and unpause the project
+- The game will automatically reconnect after the service resumes
+- Set up the GitHub Actions heartbeat workflow (see `.github/workflows/supabase-heartbeat.yml`) to keep it active
+
+**Connection Test Failed**
+- The game automatically tests the connection on startup and when viewing high scores
+- Check browser console (F12) for detailed error messages with ✓ and ✗ indicators
+- Verify your `SUPABASE_URL` and `SUPABASE_KEY` are correct in `game.js`
+
+**Scores Not Syncing**
+- Scores are automatically queued when offline or when Supabase is unavailable
+- They will sync automatically when connection is restored
+- Check the high score screen for queued score count
+- Manual sync happens when you view the high scores screen while online
+
+**API Key Issues**
+- If your Supabase project was recreated, you need a new anon key
+- Get the new key from Project Settings > API in Supabase dashboard
+- Update the `SUPABASE_KEY` constant in `game.js` (line 22)
+
+#### Advanced Troubleshooting
+
+**Enable Detailed Logging**
+Open browser console (F12) to see detailed Supabase operations:
+- ✓ Success messages in green
+- ✗ Error messages in red
+- ⚠ Warning messages in yellow
+- 📤 Upload operations
+- 📥 Download operations
+
+**Retry Logic**
+The game includes automatic retry with exponential backoff:
+- Failed requests retry up to 3 times
+- Delays: 1s, 2s, 4s between retries
+- After all retries fail, scores are queued for later
+
+**Connection Test**
+Force a connection test by:
+1. Open browser console (F12)
+2. Run: `testSupabaseConnection()`
+3. Check the result for connection status
+
+**GitHub Actions Heartbeat**
+To prevent Supabase from pausing:
+1. Add repository secrets in GitHub:
+   - `SUPABASE_URL`: Your Supabase project URL
+   - `SUPABASE_SERVICE_ROLE_KEY`: Service role key (not anon key!)
+2. The workflow runs every 6 days to keep the project active
+3. See `.github/HEARTBEAT.md` for detailed setup instructions
+
 ## Development
 
 No build tools required! This is a pure HTML/CSS/JavaScript game that runs directly in the browser.
