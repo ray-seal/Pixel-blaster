@@ -32,9 +32,52 @@ const RETRY_CONFIG = {
     backoffMultiplier: 2
 };
 
+// Validate Supabase JWT token
+function validateSupabaseKey() {
+    try {
+        const parts = SUPABASE_KEY.split('.');
+        if (parts.length !== 3) {
+            console.error('✗ Invalid Supabase key format (not a JWT)');
+            return false;
+        }
+        
+        // Decode the payload (without verification - just checking format and expiry)
+        const payload = JSON.parse(atob(parts[1]));
+        
+        if (!payload.exp) {
+            console.warn('⚠ Supabase key has no expiration (unexpected)');
+            return true; // Still proceed
+        }
+        
+        const expiryDate = new Date(payload.exp * 1000);
+        const now = new Date();
+        
+        if (expiryDate <= now) {
+            console.error('✗ Supabase key has expired on', expiryDate.toISOString());
+            console.error('  Please update SUPABASE_KEY in game.js with a new key from your Supabase dashboard');
+            return false;
+        }
+        
+        const daysUntilExpiry = Math.floor((expiryDate - now) / (1000 * 60 * 60 * 24));
+        console.log(`✓ Supabase key is valid (expires in ${daysUntilExpiry} days)`);
+        return true;
+        
+    } catch (err) {
+        console.error('✗ Failed to validate Supabase key:', err.message);
+        return false;
+    }
+}
+
 // Initialize Supabase when available
 function initSupabase() {
     if (typeof window.supabase !== 'undefined') {
+        // Validate the key first
+        if (!validateSupabaseKey()) {
+            console.error('✗ Supabase initialization aborted due to invalid key');
+            supabaseConnectionStatus = 'error';
+            return false;
+        }
+        
         try {
             supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             console.log('✓ Supabase client initialized');
