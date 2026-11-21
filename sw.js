@@ -1,15 +1,10 @@
-// Service Worker for Pixel Blaster PWA
-// This service worker enables offline functionality and manages caching
+// Pixel Blaster service worker
+// Versioned shell cache + separate runtime cache. Never allow an old runtime
+// cache to shadow files from the current release.
+const CACHE_NAME = 'pixel-blaster-v18';
+const RUNTIME_CACHE = 'pixel-blaster-runtime-v10';
 
-// CACHE VERSION MANAGEMENT
-// IMPORTANT: Increment version number (v4 -> v5 -> v6, etc.) for EVERY new deployment
-// This ensures users get the latest code without manual cache clearing
-// The version change triggers update detection in the main app (game.js)
-const CACHE_NAME = 'pixel-blaster-v17';
-const RUNTIME_CACHE = 'pixel-blaster-runtime-v9';
-
-// All assets needed for offline play
-const urlsToCache = [
+const CORE_ASSETS = [
   '/',
   '/index.html',
   '/style.css',
@@ -20,137 +15,81 @@ const urlsToCache = [
   '/boost-system.js',
   '/install-prompt.js',
   '/manifest.json',
+  '/apple-touch-icon.png',
   '/icon-192.png',
   '/icon-512.png'
 ];
 
-// Install event - cache all essential assets
-// When a new version is deployed, this event fires with the new service worker
-// The skipWaiting() call allows the new worker to activate immediately when approved by user
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Caching all essential assets');
-        return cache.addAll(urlsToCache);
-      })
-      .then(() => {
-        // Immediately activate this service worker once installed
-        // But wait for user confirmation via the update notification in game.js
-        return self.skipWaiting();
-      })
-      .catch(error => {
-        console.error('Failed to cache assets:', error);
-      })
+      .then(cache => cache.addAll(CORE_ASSETS.map(url => new Request(url, { cache: 'reload' }))))
+      .then(() => self.skipWaiting())
   );
 });
 
-// Activate event - clean up old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
-      .then(cacheNames => {
-        return Promise.all(
-          cacheNames.map(cacheName => {
-            if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
-              console.log('Deleting old cache:', cacheName);
-              return caches.delete(cacheName);
-            }
-          })
-        );
-      })
-      .then(() => {
-        // Take control of all clients immediately
-        return self.clients.claim();
-      })
+      .then(names => Promise.all(
+        names
+          .filter(name => name !== CACHE_NAME && name !== RUNTIME_CACHE)
+          .map(name => caches.delete(name))
+      ))
+      .then(() => self.clients.claim())
   );
 });
 
-// Fetch event - offline-first strategy
 self.addEventListener('fetch', event => {
-  const { request } = event;
+  const request = event.request;
   const url = new URL(request.url);
 
-  // Leaderboard API calls must always reach the server and must never be cached.
-  if (url.origin === location.origin && url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(request).catch(error => {
-        console.error('Service Worker: API request failed for', request.url, error);
-        // Return a basic error response instead of letting it fail silently
-        return new Response(JSON.stringify({ error: 'Network request failed' }), {
-          status: 503,
-          statusText: 'Service Unavailable',
-          headers: { 'Content-Type': 'application/json' }
-        });
-      })
-    );
+  if (url.origin !== self.location.origin) return;
+
+  // Never cache leaderboard/API traffic.
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(request));
     return;
   }
 
-  // Skip other cross-origin requests
-  if (url.origin !== location.origin) {
-    return;
-  }
-
-  // Always check the network for page navigations so installed PWAs don't
-  // keep reopening an old HTML shell. Fall back to the cached app offline.
+  // Always try the network for navigations, with the current shell as fallback.
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
         .then(response => {
-          if (response && response.status === 200) {
+          if (response && response.ok) {
             const copy = response.clone();
             caches.open(CACHE_NAME).then(cache => cache.put('/index.html', copy));
           }
           return response;
         })
-        .catch(() => caches.match('/index.html'))
+        .catch(() => caches.match('/index.html', { cacheName: CACHE_NAME }))
     );
     return;
   }
 
+  if (request.method !== 'GET') return;
+
   event.respondWith(
-    caches.match(request)
-      .then(cachedResponse => {
-        // Return cached response if found
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-
-        // Otherwise fetch from network
-        return fetch(request)
-          .then(response => {
-            // Don't cache if not a valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
+    caches.open(CACHE_NAME)
+      .then(cache => cache.match(request))
+      .then(currentCached => {
+        if (currentCached) return currentCached;
+        return caches.open(RUNTIME_CACHE)
+          .then(cache => cache.match(request))
+          .then(runtimeCached => runtimeCached || fetch(request).then(response => {
+            if (response && response.ok && response.type === 'basic') {
+              const copy = response.clone();
+              caches.open(RUNTIME_CACHE).then(cache => cache.put(request, copy));
             }
-
-            // Cache the new response for runtime
-            const responseToCache = response.clone();
-            caches.open(RUNTIME_CACHE)
-              .then(cache => {
-                cache.put(request, responseToCache);
-              });
-
             return response;
-          })
-          .catch(() => {
-            // If both cache and network fail, return offline page for HTML requests
-            if (request.headers.get('accept').includes('text/html')) {
-              return caches.match('/index.html');
-            }
-          });
+          }));
       })
   );
 });
 
-// Message event - handle commands from the main app
-// This enables the update notification system
 self.addEventListener('message', event => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
-    // When user accepts the update in the UI, skip waiting and activate immediately
-    // This will trigger the 'controllerchange' event in the main app, causing a reload
-    console.log('Received SKIP_WAITING message, activating new service worker...');
     self.skipWaiting();
   }
 });
