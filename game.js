@@ -1940,47 +1940,53 @@ function usePerk(perkId) {
     console.log('✓ Initialization complete');
 })();
 
-// Service worker registration for PWA offline support with update notification
-// This ensures users always get the latest version without manual cache clearing
+// Service worker registration with reliable, automatic PWA updates.
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-            .then(registration => {
-                console.log('Service Worker registered successfully:', registration.scope);
-                
-                // Check for updates periodically (every hour)
-                setInterval(() => {
-                    registration.update();
-                }, 60 * 60 * 1000);
-                
-                // Handle service worker updates
-                registration.addEventListener('updatefound', () => {
-                    const newWorker = registration.installing;
-                    console.log('New service worker found, installing...');
-                    
-                    newWorker.addEventListener('statechange', () => {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            console.log('New service worker installed, waiting for user confirmation');
-                            // Show update notification to user instead of auto-updating
-                            showUpdateNotification(newWorker);
-                        }
-                    });
-                });
-            })
-            .catch(error => {
-                console.error('Service worker registration failed:', error);
+    // Listen before registration. A fast worker can take control before
+    // register() resolves, and attaching this afterwards can miss the event.
+    let refreshingForWorkerUpdate = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshingForWorkerUpdate) return;
+        refreshingForWorkerUpdate = true;
+        console.log('New app version activated. Reloading...');
+        window.location.reload();
+    });
+
+    window.addEventListener('load', async () => {
+        try {
+            const registration = await navigator.serviceWorker.register('/sw.js', {
+                updateViaCache: 'none'
             });
-        
-        // Reload page when new service worker takes control
-        // This happens after user accepts the update
-        let refreshing = false;
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-            if (!refreshing) {
-                refreshing = true;
-                console.log('New service worker activated, reloading page...');
-                window.location.reload();
-            }
-        });
+            console.log('Service Worker registered:', registration.scope);
+
+            // Check on every app launch, plus periodically while it remains open.
+            const checkForUpdate = () => registration.update().catch(error => {
+                console.warn('Service worker update check failed:', error);
+            });
+            checkForUpdate();
+            setInterval(checkForUpdate, 30 * 60 * 1000);
+
+            // iOS standalone PWAs may sit suspended for long periods. Check
+            // again whenever the app is brought back to the foreground.
+            window.addEventListener('pageshow', checkForUpdate);
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') checkForUpdate();
+            });
+
+            registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                if (!newWorker) return;
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        // sw.js calls skipWaiting() after its new cache is ready.
+                        // No prompt needed: controllerchange reloads the app.
+                        console.log('New version installed and activating automatically.');
+                    }
+                });
+            });
+        } catch (error) {
+            console.error('Service worker registration failed:', error);
+        }
     });
 }
 

@@ -5,8 +5,8 @@
 // IMPORTANT: Increment version number (v4 -> v5 -> v6, etc.) for EVERY new deployment
 // This ensures users get the latest code without manual cache clearing
 // The version change triggers update detection in the main app (game.js)
-const CACHE_NAME = 'pixel-blaster-v8';
-const RUNTIME_CACHE = 'pixel-blaster-runtime-v7';
+const CACHE_NAME = 'pixel-blaster-v9';
+const RUNTIME_CACHE = 'pixel-blaster-runtime-v8';
 
 // All assets needed for offline play
 const urlsToCache = [
@@ -88,6 +88,23 @@ self.addEventListener('fetch', event => {
 
   // Skip other cross-origin requests
   if (url.origin !== location.origin) {
+    return;
+  }
+
+  // Always check the network for page navigations so installed PWAs don't
+  // keep reopening an old HTML shell. Fall back to the cached app offline.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          if (response && response.status === 200) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put('/index.html', copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match('/index.html'))
+    );
     return;
   }
 
