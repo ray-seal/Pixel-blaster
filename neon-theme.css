@@ -615,9 +615,10 @@ input:focus-visible, button:focus-visible {
 }
 
 
-/* Home screen: gameplay-only boost meter and perk quick-use controls stay hidden. */
-#gameContainer:has(#menu.active) #boostContainer,
-#gameContainer:has(#menu.active) #perkButtons {
+/* Keep gameplay controls off every menu, including shop and leaderboard. */
+#gameContainer:has(.screen.active) #boostContainer,
+#gameContainer:has(.screen.active) #perkButtons,
+#gameContainer:has(.screen.active) #perkPanel {
     display: none !important;
     visibility: hidden !important;
     pointer-events: none !important;
