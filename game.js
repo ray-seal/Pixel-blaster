@@ -14,6 +14,9 @@ const newHighScorePrompt = document.getElementById('newHighScorePrompt');
 const highScoreName = document.getElementById('highScoreName');
 const submitHighScore = document.getElementById('submitHighScore');
 const highScoreBtn = document.getElementById('highScoreBtn');
+const menuLeaderboardBtn = document.getElementById('menuLeaderboardBtn');
+const gameplayLeaderboard = document.getElementById('gameplayLeaderboard');
+const gameplayLeaderboardEntries = document.getElementById('gameplayLeaderboardEntries');
 const backToMenuFromScores = document.getElementById('backToMenuFromScores');
 
 // Neon leaderboard API. Database credentials stay server-side in Vercel.
@@ -135,6 +138,7 @@ async function addHighScore(name, score, distance) {
     globalHighScores.sort((a, b) => b.score - a.score);
     globalHighScores = globalHighScores.slice(0, 20);
     localStorage.setItem('globalHighScores', JSON.stringify(globalHighScores));
+    renderGameplayLeaderboard();
     console.log('✓ High score saved locally:', highScoreEntry);
 
     if (!isOnline) {
@@ -208,10 +212,29 @@ async function fetchGlobalHighScores() {
             localStorage.setItem('globalHighScores', JSON.stringify(globalHighScores));
         }
         leaderboardConnectionStatus = 'connected';
+        renderGameplayLeaderboard();
     } catch (err) {
-        console.warn('Using cached leaderboard scores:', err.message);
+        console.warn('Using cached leaderboard scores':, err.message);
         leaderboardConnectionStatus = 'error';
     }
+}
+
+function renderGameplayLeaderboard() {
+    if (!gameplayLeaderboardEntries) return;
+    const leaders = [...globalHighScores]
+        .sort((a, b) => Number(b.score) - Number(a.score))
+        .slice(0, 3);
+    if (leaders.length === 0) {
+        gameplayLeaderboardEntries.innerHTML = '<div class="gameplay-leaderboard-empty">NO SCORES YET</div>';
+        return;
+    }
+    gameplayLeaderboardEntries.innerHTML = leaders.map((entry, index) => `
+        <div class="gameplay-leader-row rank-${index + 1}">
+            <span class="gameplay-rank">${['①', '②', '③'][index]}</span>
+            <span class="gameplay-pilot">${String(entry.name || '---').replace(/[^A-Z0-9]/gi, '').slice(0, 3)}</span>
+            <strong class="gameplay-points">${Math.max(0, Number(entry.score) || 0).toLocaleString()}</strong>
+        </div>
+    `).join('');
 }
 
 function isHighScore(score) {
@@ -551,12 +574,15 @@ function startGame() {
     upgradesMenu.classList.remove('active');
     perkSelectionMenu.classList.remove('active');
     hud.classList.add('active');
+    if (gameplayLeaderboard) gameplayLeaderboard.classList.add('active');
+    renderGameplayLeaderboard();
     updatePerkButtons();
 }
 
 function gameOver() {
     window.gameState = 'gameOver';
     hud.classList.remove('active');
+    if (gameplayLeaderboard) gameplayLeaderboard.classList.remove('active');
     perkButtonsContainer.classList.remove('active');
     gameOverScreen.classList.add('active');
     finalScoreDisplay.textContent = `Score: ${Math.floor(score)}, Distance: ${Math.floor(distanceTraveled)}m`;
@@ -1619,7 +1645,15 @@ retryBtn.addEventListener('click', () => {
     startGame();
 });
 
-highScoreBtn.addEventListener('click', async (e) => {
+menuLeaderboardBtn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    menuScreen.classList.remove('active');
+    highScoreTable.classList.add('active');
+    await fetchGlobalHighScores();
+    displayHighScores();
+});
+
+highScoreBtn?.addEventListener('click', async (e) => {
     e.stopPropagation();
     menuScreen.classList.remove('active');
     highScoreTable.classList.add('active');
