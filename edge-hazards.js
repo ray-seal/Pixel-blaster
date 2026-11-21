@@ -54,34 +54,6 @@
         window.startGame = function (...args) {
             const res = _origStartGame.apply(this, args);
             spawnEdgeHazards();
-            try {
-                const gameContainer = document.getElementById('gameContainer');
-                let perkPanel = document.getElementById('perkPanel');
-                if (!perkPanel && gameContainer) {
-                    perkPanel = document.createElement('div');
-                    perkPanel.id = 'perkPanel';
-                    gameContainer.appendChild(perkPanel);
-                }
-                const shopPerkButtons = document.getElementById('perkButtons');
-                if (shopPerkButtons && perkPanel) {
-                    perkPanel.innerHTML = '';
-                    const clones = shopPerkButtons.cloneNode(true);
-                    const buttons = clones.querySelectorAll('button, .perk-item, .perk-btn');
-                    if (buttons.length) {
-                        buttons.forEach(btn => {
-                            btn.classList.add('perk-btn');
-                        });
-                        perkPanel.appendChild(clones);
-                    } else {
-                        const fallback = document.createElement('div');
-                        fallback.className = 'perk-placeholder';
-                        fallback.textContent = 'Perks';
-                        perkPanel.appendChild(fallback);
-                    }
-                }
-            } catch (e) {
-                console.warn('perk panel wiring failed', e);
-            }
             return res;
         };
     }
