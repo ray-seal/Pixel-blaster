@@ -17,6 +17,7 @@ body {
     position: relative;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -407,7 +408,7 @@ body {
 
 #perkButtons {
     position: absolute;
-    bottom: max(18px, env(safe-area-inset-bottom));
+    bottom: calc(max(18px, env(safe-area-inset-bottom)) + 38px);
     left: 50%;
     transform: translateX(-50%);
     display: none;
@@ -426,7 +427,7 @@ body {
         flex-direction: row;
         left: 50%;
         top: auto;
-        bottom: max(12px, env(safe-area-inset-bottom));
+        bottom: calc(max(12px, env(safe-area-inset-bottom)) + 28px);
         transform: translateX(-50%);
     }
 }
