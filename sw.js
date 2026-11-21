@@ -1,7 +1,7 @@
 // Pixel Blaster service worker
 // Versioned shell cache + separate runtime cache. Never allow an old runtime
 // cache to shadow files from the current release.
-const CACHE_NAME = 'pixel-blaster-v19';
+const CACHE_NAME = 'pixel-blaster-v20';
 const RUNTIME_CACHE = 'pixel-blaster-runtime-v11';
 
 const CORE_ASSETS = [
