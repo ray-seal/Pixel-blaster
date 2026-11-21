@@ -91,6 +91,9 @@ let tunnelGap = 180;
 let tunnelWidth = 60;
 let nextTunnelX = 0; // Will be set after canvas initialization
 
+// Starfield is generated randomly whenever the canvas changes size/orientation.
+let stars = [];
+
 // Canvas setup
 function resizeCanvas() {
     // Detect orientation
@@ -108,6 +111,9 @@ function resizeCanvas() {
     
     // Update tunnel gap based on canvas height for better gameplay
     tunnelGap = Math.max(canvas.height * 0.25, 150);
+
+    // Rebuild the starfield for the new canvas dimensions.
+    createStarField();
 }
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
@@ -1147,13 +1153,26 @@ function drawParticles() {
     ctx.globalAlpha = 1;
 }
 
+function createStarField() {
+    const starCount = 50;
+    stars = Array.from({ length: starCount }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: 0.6 + Math.random() * 1.0,
+        speed: 0.2 + Math.random() * 0.7,
+        alpha: 0.35 + Math.random() * 0.65
+    }));
+}
+
 function drawStars() {
-    ctx.fillStyle = '#fff';
-    for (let i = 0; i < 50; i++) {
-        const x = (i * 37 + distanceTraveled * 0.5) % canvas.width;
-        const y = (i * 73) % canvas.height;
-        ctx.fillRect(x, y, 1, 1);
+    for (const star of stars) {
+        // Different drift speeds add depth without creating repeating rows or columns.
+        const x = (star.x + distanceTraveled * star.speed) % canvas.width;
+        ctx.globalAlpha = star.alpha;
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(x, star.y, star.size, star.size);
     }
+    ctx.globalAlpha = 1;
 }
 
 /**
