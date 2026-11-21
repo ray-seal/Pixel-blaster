@@ -19,6 +19,20 @@
     <title>Pixel Blaster</title>
 </head>
 <body>
+    <div id="installPrompt" class="install-prompt" role="dialog" aria-live="polite" aria-labelledby="installPromptTitle" hidden>
+        <div class="install-prompt-card">
+            <div class="install-prompt-icon">🚀</div>
+            <div class="install-prompt-copy">
+                <strong id="installPromptTitle">Take Pixel Blaster with you</strong>
+                <p id="installPromptMessage">Install the game for quick access from your home screen.</p>
+            </div>
+            <div class="install-prompt-actions">
+                <button id="installActionBtn" type="button">Install</button>
+                <button id="dismissInstallBtn" type="button" aria-label="Not now">Not now</button>
+            </div>
+        </div>
+    </div>
+
     <div id="gameContainer">
         <!-- Update notification banner -->
         <div id="updateNotification" class="update-notification" style="display: none;">
