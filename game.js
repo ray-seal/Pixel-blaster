@@ -576,6 +576,7 @@ function startGame() {
     hud.classList.add('active');
     if (gameplayLeaderboard) gameplayLeaderboard.classList.add('active');
     renderGameplayLeaderboard();
+    fetchGlobalHighScores();
     updatePerkButtons();
 }
 
