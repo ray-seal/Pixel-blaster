@@ -5,7 +5,7 @@
 // IMPORTANT: Increment version number (v4 -> v5 -> v6, etc.) for EVERY new deployment
 // This ensures users get the latest code without manual cache clearing
 // The version change triggers update detection in the main app (game.js)
-const CACHE_NAME = 'pixel-blaster-v10';
+const CACHE_NAME = 'pixel-blaster-v11';
 const RUNTIME_CACHE = 'pixel-blaster-runtime-v9';
 
 // All assets needed for offline play
