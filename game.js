@@ -214,7 +214,7 @@ async function fetchGlobalHighScores() {
         leaderboardConnectionStatus = 'connected';
         renderGameplayLeaderboard();
     } catch (err) {
-        console.warn('Using cached leaderboard scores':, err.message);
+        console.warn('Using cached leaderboard scores:', err.message);
         leaderboardConnectionStatus = 'error';
     }
 }
