@@ -545,87 +545,71 @@ input:focus-visible, button:focus-visible {
 }
 
 
-/* Gameplay-only compact global top-three panel */
-#menu .high-score-link { display: none !important; }
+
+/* Home-screen top-three leaderboard, directly beneath Loot Drops */
 .menu-leaderboard-link {
-    display: block;
-    width: 100%;
-    margin: 10px 0 0;
-    padding: 8px 4px;
     border: 0;
+    padding: 5px 0;
     background: transparent;
     color: var(--muted);
     font: inherit;
-    font-size: .62rem;
+    font-size: .57rem;
     font-weight: 800;
-    letter-spacing: .18em;
-    text-align: center;
+    letter-spacing: .13em;
     cursor: pointer;
 }
 .menu-leaderboard-link:hover { color: var(--cyan); text-shadow: var(--glow-cyan); }
-
-#gameplayLeaderboard {
-    position: absolute;
-    display: none;
-    left: 50%;
-    bottom: max(12px, env(safe-area-inset-bottom));
-    transform: translateX(-50%);
-    z-index: 6;
-    width: min(250px, calc(100vw - 28px));
-    padding: 7px 10px 8px;
-    border: 1px solid rgba(54,245,255,.42);
-    border-radius: 7px;
-    background: rgba(5,10,26,.84);
-    box-shadow: 0 0 18px rgba(54,245,255,.13), inset 0 0 16px rgba(54,245,255,.045);
-    pointer-events: none;
-    backdrop-filter: blur(8px);
+#homeLeaderboard {
+    width: min(100%, 560px);
+    margin: 12px auto 24px;
+    padding: 10px 14px 12px;
+    border: 1px solid rgba(54,245,255,.34);
+    border-radius: 8px;
+    background: linear-gradient(145deg, rgba(13,25,54,.88), rgba(18,9,38,.84));
+    box-shadow: 0 0 22px rgba(54,245,255,.07), inset 0 0 18px rgba(54,245,255,.03);
 }
-#gameplayLeaderboard.active { display: block; }
-.gameplay-leaderboard-title {
-    margin-bottom: 4px;
+.home-leaderboard-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 5px;
     color: var(--cyan);
-    font-size: .57rem;
+    font-size: .7rem;
     font-weight: 900;
-    letter-spacing: .22em;
-    text-align: center;
+    letter-spacing: .18em;
     text-shadow: var(--glow-cyan);
 }
-.gameplay-leader-row {
-    display: grid;
-    grid-template-columns: 23px 1fr auto;
-    align-items: center;
-    gap: 8px;
-    min-height: 20px;
-    padding: 2px 4px;
-    border-top: 1px solid rgba(145,165,201,.12);
-    font-size: .7rem;
-}
-.gameplay-rank { color: var(--muted); }
-.gameplay-pilot { color: var(--ink); font-weight: 800; letter-spacing: .14em; }
-.gameplay-points { color: var(--lime); font-variant-numeric: tabular-nums; }
-.gameplay-leader-row.rank-1 .gameplay-rank,
-.gameplay-leader-row.rank-1 .gameplay-pilot { color: var(--amber); }
-.gameplay-leader-row.rank-2 .gameplay-rank { color: #c8d7e8; }
-.gameplay-leader-row.rank-3 .gameplay-rank { color: #d99a70; }
-.gameplay-leaderboard-empty {
+.home-leaderboard-heading .menu-leaderboard-link {
     color: var(--muted);
-    font-size: .65rem;
+    text-shadow: none;
+}
+.home-leader-row {
+    display: grid;
+    grid-template-columns: 30px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 27px;
+    padding: 4px 7px;
+    border-top: 1px solid rgba(145,165,201,.13);
+    background: rgba(14,23,49,.35);
+    font-size: .8rem;
+}
+.home-leader-rank { color: var(--muted); }
+.home-leader-name { color: var(--ink); font-weight: 800; letter-spacing: .15em; }
+.home-leader-score { color: var(--lime); font-weight: 900; font-variant-numeric: tabular-nums; }
+.home-leader-row.rank-1 .home-leader-rank,
+.home-leader-row.rank-1 .home-leader-name { color: var(--amber); }
+.home-leader-row.rank-2 .home-leader-rank { color: #c8d7e8; }
+.home-leader-row.rank-3 .home-leader-rank { color: #d99a70; }
+.home-leaderboard-empty {
+    padding: 7px 4px;
+    color: var(--muted);
+    font-size: .68rem;
     letter-spacing: .12em;
     text-align: center;
-    padding: 5px;
 }
-
-/* The leaderboard takes the lower gameplay slot previously occupied by boost/perk UI. */
-#boostContainer, #perkButtons { display: none !important; }
-@media (orientation: landscape) {
-    #gameplayLeaderboard {
-        left: auto;
-        right: 14px;
-        bottom: 12px;
-        transform: none;
-        width: 190px;
-    }
-}
-@media (max-width: 380px) {
-    #gameplayLeaderboard { width: min(220px, calc(100vw - 24px)); }
+@media (max-width: 640px) {
+    #homeLeaderboard { margin-top: 10px; padding: 9px 11px; }
+    .home-leader-row { min-height: 25px; font-size: .74rem; }
 }
