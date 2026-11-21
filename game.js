@@ -962,17 +962,6 @@ function updateParticles() {
 }
 
 function checkCollisions() {
-    // Player vs tunnels
-    for (const tunnel of tunnels) {
-        if (player.x + player.width > tunnel.x && player.x < tunnel.x + tunnel.width) {
-            if (player.y < tunnel.topHeight || player.y + player.height > tunnel.bottomY) {
-                takeDamage();
-                // Push player back slightly
-                player.x = Math.max(50, player.x - 10);
-            }
-        }
-    }
-    
     // Player vs enemies
     for (let i = enemies.length - 1; i >= 0; i--) {
         const enemy = enemies[i];
@@ -1150,133 +1139,26 @@ function updateScore() {
 }
 
 function drawPlayer() {
-    // Draw shield if active
-    if (player.hasShield) {
-        ctx.strokeStyle = '#00ffff';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(
-            player.x + player.width / 2,
-            player.y + player.height / 2,
-            Math.max(player.width, player.height) / 2 + 4,
-            0,
-            Math.PI * 2
-        );
-        ctx.stroke();
-        
-        // Pulsing inner circle
-        ctx.globalAlpha = 0.3 + Math.sin(Date.now() / 100) * 0.2;
-        ctx.fillStyle = '#00ffff';
-        ctx.fill();
-        ctx.globalAlpha = 1;
-    }
-    
-    // Draw ship body
-    ctx.fillStyle = player.color;
-    ctx.fillRect(player.x, player.y, player.width, player.height);
-    
-    // Draw ship nose
-    ctx.fillStyle = '#00cc00';
-    ctx.fillRect(player.x + player.width - 4, player.y + 4, 4, 4);
-    
-    // Draw engine flame if thrusting
-    if (isThrusting) {
-        ctx.fillStyle = '#ff6600';
-        ctx.fillRect(player.x - 6, player.y + 3, 6, 6);
-        ctx.fillStyle = '#ffff00';
-        ctx.fillRect(player.x - 4, player.y + 4, 4, 4);
-    }
+ const x=player.x,y=player.y,w=player.width,h=player.height,cy=y+h/2,pulse=.82+Math.sin(Date.now()/75)*.18;
+ ctx.save();ctx.translate(x,cy);ctx.scale(w/30,h/18);
+ if(player.hasShield){ctx.save();ctx.globalAlpha=.42+Math.sin(Date.now()/110)*.12;ctx.strokeStyle='#55f7ff';ctx.lineWidth=1.8;ctx.shadowColor='#00eaff';ctx.shadowBlur=15;ctx.beginPath();ctx.ellipse(15,0,19,13,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
+ ctx.save();ctx.globalAlpha=isThrusting?1:.55;ctx.shadowColor='#ff6a24';ctx.shadowBlur=isThrusting?16:8;ctx.fillStyle='#ff5b35';ctx.beginPath();ctx.moveTo(-1,-4);ctx.lineTo(-12-(isThrusting?5*pulse:0),0);ctx.lineTo(-1,4);ctx.closePath();ctx.fill();ctx.fillStyle='#ffe66d';ctx.beginPath();ctx.moveTo(1,-2);ctx.lineTo(-7-(isThrusting?4*pulse:0),0);ctx.lineTo(1,2);ctx.closePath();ctx.fill();ctx.restore();
+ ctx.shadowColor='#00dfff';ctx.shadowBlur=10;ctx.fillStyle='#176c91';ctx.beginPath();ctx.moveTo(-4,-4);ctx.lineTo(8,-9);ctx.lineTo(20,-7);ctx.lineTo(11,-2);ctx.lineTo(7,0);ctx.lineTo(11,2);ctx.lineTo(20,7);ctx.lineTo(8,9);ctx.lineTo(-4,4);ctx.closePath();ctx.fill();
+ const hull=ctx.createLinearGradient(0,-7,0,7);hull.addColorStop(0,'#e8fbff');hull.addColorStop(.45,'#72d9f2');hull.addColorStop(1,'#2374a8');ctx.fillStyle=hull;ctx.beginPath();ctx.moveTo(-8,-4);ctx.lineTo(8,-6);ctx.lineTo(29,0);ctx.lineTo(8,6);ctx.lineTo(-8,4);ctx.lineTo(-3,0);ctx.closePath();ctx.fill();ctx.strokeStyle='#d8ffff';ctx.lineWidth=.65;ctx.stroke();
+ ctx.shadowColor='#20f5ff';ctx.shadowBlur=8;ctx.fillStyle='#07324e';ctx.beginPath();ctx.ellipse(8,0,5.5,2.7,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#9fffff';ctx.beginPath();ctx.ellipse(9,-.7,3.2,1,-.15,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#ffdf73';ctx.fillRect(-5,-5,3,1);ctx.fillRect(-5,4,3,1);ctx.restore();
 }
 
-function drawTunnels() {
-    ctx.fillStyle = '#444';
-    for (const tunnel of tunnels) {
-        // Top tunnel
-        ctx.fillRect(tunnel.x, 0, tunnel.width, tunnel.topHeight);
-        // Bottom tunnel
-        ctx.fillRect(tunnel.x, tunnel.bottomY, tunnel.width, canvas.height - tunnel.bottomY);
-        
-        // Draw edge highlights
-        ctx.fillStyle = '#666';
-        ctx.fillRect(tunnel.x, tunnel.topHeight - 4, tunnel.width, 4);
-        ctx.fillRect(tunnel.x, tunnel.bottomY, tunnel.width, 4);
-        ctx.fillStyle = '#444';
-    }
-}
+function drawTunnels() { /* Retired: no tunnel gates are drawn. */ }
 
 function drawEnemies() {
-    for (const enemy of enemies) {
-        ctx.fillStyle = enemy.color;
-        ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
-        
-        // Draw enemy details
-        const detailSize = enemy.isBig ? 16 : 8;
-        const eyeSize = enemy.isBig ? 4 : 2;
-        ctx.fillStyle = '#ff0033';
-        ctx.fillRect(enemy.x + 4, enemy.y + 4, detailSize, detailSize);
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(enemy.x + 6, enemy.y + 6, eyeSize, eyeSize);
-        ctx.fillRect(enemy.x + (enemy.isBig ? 10 : 10), enemy.y + 6, eyeSize, eyeSize);
-        
-        // Show indicator for shooting enemies
-        if (enemy.canShoot) {
-            ctx.fillStyle = '#ffff00';
-            ctx.fillRect(enemy.x + 2, enemy.y + 2, 3, 3);
-        }
-    }
+ for(const enemy of enemies){const cx=enemy.x+enemy.width/2,cy=enemy.y+enemy.height/2,scale=enemy.isBig?1.75:1,pulse=.88+Math.sin(Date.now()/(enemy.canShoot?85:125)+enemy.y)*.12;ctx.save();ctx.translate(cx,cy);ctx.scale(scale,scale);const color=enemy.color||'#ff397e';ctx.shadowColor=color;ctx.shadowBlur=enemy.isBig?18:11;ctx.fillStyle='#381333';ctx.beginPath();ctx.moveTo(-10,0);ctx.lineTo(-6,-7);ctx.lineTo(1,-9);ctx.lineTo(9,-5);ctx.lineTo(12,0);ctx.lineTo(9,5);ctx.lineTo(1,9);ctx.lineTo(-6,7);ctx.closePath();ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.stroke();ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(-5,-6);ctx.lineTo(-12,-11);ctx.lineTo(-9,-2);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(-5,6);ctx.lineTo(-12,11);ctx.lineTo(-9,2);ctx.closePath();ctx.fill();ctx.fillStyle='#ff335f';ctx.beginPath();ctx.arc(2,0,4.5*pulse,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff3f7';ctx.beginPath();ctx.arc(3,-1,1.5,0,Math.PI*2);ctx.fill();if(enemy.canShoot){ctx.shadowColor='#ffe45c';ctx.shadowBlur=12;ctx.fillStyle='#ffe45c';ctx.beginPath();ctx.arc(-6,0,2.2,0,Math.PI*2);ctx.fill();}if(enemy.isBig){ctx.strokeStyle='rgba(255,110,220,.8)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,0,14+pulse,0,Math.PI*2);ctx.stroke();}ctx.restore();}
 }
 
-function drawBullets() {
-    for (const bullet of bullets) {
-        ctx.fillStyle = bullet.color;
-        ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(bullet.x + 2, bullet.y + 1, 4, 1);
-    }
-}
+function drawBullets(){for(const bullet of bullets){ctx.save();ctx.shadowColor='#ffe66d';ctx.shadowBlur=13;const g=ctx.createLinearGradient(bullet.x,0,bullet.x+bullet.width,0);g.addColorStop(0,'rgba(255,190,70,0)');g.addColorStop(.35,'#ffbf4d');g.addColorStop(1,'#fff');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(bullet.x+bullet.width/2,bullet.y+bullet.height/2,Math.max(4,bullet.width/2),Math.max(1.5,bullet.height),0,0,Math.PI*2);ctx.fill();ctx.restore();}}
 
-function drawEnemyBullets() {
-    for (const bullet of enemyBullets) {
-        ctx.fillStyle = bullet.color;
-        ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
-        ctx.fillStyle = '#ff6666';
-        ctx.fillRect(bullet.x + 1, bullet.y + 1, 3, 1);
-    }
-}
+function drawEnemyBullets(){for(const bullet of enemyBullets){ctx.save();ctx.shadowColor='#ff276f';ctx.shadowBlur=12;ctx.fillStyle='#ff397e';ctx.beginPath();ctx.moveTo(bullet.x,bullet.y+bullet.height/2);ctx.lineTo(bullet.x+bullet.width,bullet.y);ctx.lineTo(bullet.x+bullet.width-2,bullet.y+bullet.height/2);ctx.lineTo(bullet.x+bullet.width,bullet.y+bullet.height);ctx.closePath();ctx.fill();ctx.fillStyle='#fff';ctx.fillRect(bullet.x+1,bullet.y+bullet.height/2-.5,2,1);ctx.restore();}}
 
-function drawCoins() {
-    for (const coin of coins_on_screen) {
-        const centerX = coin.x + coin.width / 2;
-        const centerY = coin.y + coin.height / 2;
-        
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(coin.rotation);
-        
-        // Draw coin
-        ctx.fillStyle = coin.color;
-        ctx.beginPath();
-        ctx.arc(0, 0, coin.width / 2, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Add shine effect
-        ctx.fillStyle = coin.isRare ? '#ffffff' : '#ffdd66';
-        ctx.beginPath();
-        ctx.arc(-1, -1, 2, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Rare coins have a star
-        if (coin.isRare) {
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 8px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('★', 0, 0);
-        }
-        
-        ctx.restore();
-    }
-}
+function drawCoins(){for(const coin of coins_on_screen){const cx=coin.x+coin.width/2,cy=coin.y+coin.height/2,r=coin.width/2;ctx.save();ctx.translate(cx,cy);ctx.rotate(coin.rotation);ctx.shadowColor=coin.isRare?'#fff0a0':'#ffb52e';ctx.shadowBlur=coin.isRare?18:10;const gold=ctx.createRadialGradient(-r*.35,-r*.4,1,0,0,r);gold.addColorStop(0,'#fffbd0');gold.addColorStop(.3,coin.isRare?'#fff0a0':'#ffd65a');gold.addColorStop(1,coin.isRare?'#d58b20':'#b85a16');ctx.fillStyle=gold;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff2ae';ctx.lineWidth=1;ctx.stroke();ctx.fillStyle='#fff';ctx.font='bold '+Math.max(7,r*1.25)+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(coin.isRare?'★':'¢',0,1);ctx.restore();}}
 
 function drawParticles() {
     for (const particle of particles) {
@@ -1299,66 +1181,10 @@ function drawStars() {
 /**
  * Draws loot drops with visual distinction
  */
-function drawLootDrops() {
-    for (const loot of lootDrops) {
-        const centerX = loot.x + loot.width / 2;
-        const centerY = loot.y + loot.height / 2;
-        
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(loot.rotation);
-        
-        // Draw based on shape
-        if (loot.lootType.shape === 'circle') {
-            // Draw circle
-            ctx.fillStyle = loot.lootType.color;
-            ctx.beginPath();
-            ctx.arc(0, 0, loot.width / 2, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Add glow effect
-            ctx.strokeStyle = loot.lootType.color;
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(0, 0, loot.width / 2 + 2, 0, Math.PI * 2);
-            ctx.stroke();
-        } else {
-            // Draw square
-            ctx.fillStyle = loot.lootType.color;
-            ctx.fillRect(-loot.width / 2, -loot.height / 2, loot.width, loot.height);
-            
-            // Add border
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(-loot.width / 2, -loot.height / 2, loot.width, loot.height);
-        }
-        
-        // Add sparkle
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(-1, -1, 2, 2);
-        
-        ctx.restore();
-    }
-}
+function drawLootDrops(){for(const loot of lootDrops){const cx=loot.x+loot.width/2,cy=loot.y+loot.height/2,color=loot.lootType.color||'#42efff',symbol=({double_shot:'Ⅱ',bigger_enemies:'✦',extra_life:'+',random_obstacles:'!',shrink_player:'↓'})[loot.lootType.id]||'✧',pulse=1+Math.sin(Date.now()/105+loot.y)*.08;ctx.save();ctx.translate(cx,cy);ctx.rotate(loot.rotation);ctx.scale(pulse,pulse);ctx.shadowColor=color;ctx.shadowBlur=17;ctx.fillStyle='rgba(7,13,35,.92)';ctx.beginPath();ctx.arc(0,0,9,0,Math.PI*2);ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,8,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=8;ctx.fillStyle=color;ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(symbol,0,.5);ctx.restore();}}
 
-/**
- * Draws random obstacles
- */
-function drawObstacles() {
-    for (const obstacle of obstacles) {
-        ctx.fillStyle = obstacle.color;
-        ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-        
-        // Add warning stripes
-        ctx.fillStyle = '#000';
-        ctx.fillRect(obstacle.x + 2, obstacle.y + 2, obstacle.width - 4, 4);
-        ctx.fillRect(obstacle.x + 2, obstacle.y + 10, obstacle.width - 4, 4);
-    }
-}
+function drawObstacles(){for(const obstacle of obstacles){const cx=obstacle.x+obstacle.width/2,cy=obstacle.y+obstacle.height/2;ctx.save();ctx.translate(cx,cy);ctx.shadowColor='#ff552f';ctx.shadowBlur=13;ctx.fillStyle='#431c2b';ctx.strokeStyle='#ff613e';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(0,-obstacle.height/2);ctx.lineTo(obstacle.width/2,0);ctx.lineTo(0,obstacle.height/2);ctx.lineTo(-obstacle.width/2,0);ctx.closePath();ctx.fill();ctx.stroke();ctx.strokeStyle='#ffc06a';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-obstacle.width*.22,-obstacle.height*.22);ctx.lineTo(obstacle.width*.22,obstacle.height*.22);ctx.stroke();ctx.restore();}}
 
-/**
- * Draws active effect indicators on HUD
- */
 function drawActiveEffects() {
     const now = Date.now();
     let yOffset = 60;
@@ -1416,7 +1242,7 @@ function gameLoop(timestamp) {
         
         // Update (all update functions now use window.deltaTime for consistent speed)
         updatePlayer();
-        updateTunnels();
+        updateTunnels(); // Keep distance-gate score milestones; gates are no longer drawn or collidable.
         updateEnemies();
         updateBullets();
         updateEnemyBullets();
@@ -1430,7 +1256,6 @@ function gameLoop(timestamp) {
         updateHUD();
         
         // Draw
-        drawTunnels();
         drawObstacles();
         drawEnemies();
         drawLootDrops();
