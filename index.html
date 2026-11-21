@@ -36,11 +36,12 @@
                 <h1><span>PIXEL</span><strong>BLASTER</strong></h1>
                 <p class="menu-tagline">SURVIVE THE VOID. OWN THE SCOREBOARD.</p>
             </div>
-            <button id="highScoreBtn" class="high-score-link" title="Global leaderboard" aria-label="Global leaderboard">🏆</button>
+
             <div class="menu-command">
                 <div class="command-status"><span class="status-dot"></span> PILOT READY <span class="command-divider">/</span> SYSTEMS ONLINE</div>
                 <div class="start-prompt"><span class="start-arrow">▶</span><span>INITIATE RUN</span><small>TAP TO LAUNCH</small></div>
                 <button id="shopBtn" class="menu-button"><span class="button-icon">✦</span> WEAPON SYSTEMS <span class="button-arrow">›</span></button>
+                <button id="menuLeaderboardBtn" class="menu-leaderboard-link">VIEW GLOBAL LEADERBOARD ↗</button>
                 <p class="instructions"><span>TO FLY</span> Tap / click to thrust <i>•</i> Hold to shoot</p>
             </div>
             <div id="lootLegend">
@@ -191,6 +192,10 @@
             <div id="health">Health: ❤❤❤</div>
         </div>
         <div id="perkButtons"></div>
+        <section id="gameplayLeaderboard" aria-label="Top three global scores" aria-live="polite">
+            <div class="gameplay-leaderboard-title">★ TOP PILOTS</div>
+            <div id="gameplayLeaderboardEntries"></div>
+        </section>
     </div>
     <script src="game.js"></script>
     <script src="edge-hazards.js"></script>
