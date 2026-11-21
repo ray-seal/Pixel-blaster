@@ -96,17 +96,21 @@ let stars = [];
 
 // Canvas setup
 function resizeCanvas() {
-    // Detect orientation
-    const isPortrait = window.innerHeight > window.innerWidth;
-    
+    // Use the visible viewport, which can differ from window.innerHeight
+    // on Android when system/browser bars are present.
+    const viewport = window.visualViewport;
+    const viewportWidth = Math.round(viewport?.width || window.innerWidth);
+    const viewportHeight = Math.round(viewport?.height || window.innerHeight);
+    const isPortrait = viewportHeight > viewportWidth;
+
     if (isPortrait) {
         // Portrait mode: limit width, allow more height
-        canvas.width = Math.min(window.innerWidth, 600);
-        canvas.height = Math.min(window.innerHeight, 900);
+        canvas.width = Math.min(viewportWidth, 600);
+        canvas.height = Math.min(viewportHeight, 900);
     } else {
         // Landscape mode: optimize for wider screens
-        canvas.width = Math.min(window.innerWidth, 900);
-        canvas.height = Math.min(window.innerHeight, 600);
+        canvas.width = Math.min(viewportWidth, 900);
+        canvas.height = Math.min(viewportHeight, 600);
     }
     
     // Update tunnel gap based on canvas height for better gameplay
@@ -117,6 +121,9 @@ function resizeCanvas() {
 }
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', resizeCanvas);
+}
 window.addEventListener('orientationchange', () => {
     setTimeout(resizeCanvas, 100); // Delay to ensure orientation change completes
 });
