@@ -1072,10 +1072,30 @@ function checkCollisions() {
 }
 
 function isColliding(obj1, obj2) {
-    return obj1.x < obj2.x + obj2.width &&
-           obj1.x + obj1.width > obj2.x &&
-           obj1.y < obj2.y + obj2.height &&
-           obj1.y + obj1.height > obj2.y;
+    // Big enemies are drawn at 1.75x, so expand their collision bounds
+    // to match the visible sprite rather than leaving a tiny central hitbox.
+    const hitbox = obj => {
+        if (!obj.isBig) {
+            return { x: obj.x, y: obj.y, width: obj.width, height: obj.height };
+        }
+
+        const width = obj.width * 1.3;
+        const height = obj.height * 1.3;
+        return {
+            x: obj.x + (obj.width - width) / 2,
+            y: obj.y + (obj.height - height) / 2,
+            width,
+            height
+        };
+    };
+
+    const a = hitbox(obj1);
+    const b = hitbox(obj2);
+
+    return a.x < b.x + b.width &&
+           a.x + a.width > b.x &&
+           a.y < b.y + b.height &&
+           a.y + a.height > b.y;
 }
 
 function takeDamage() {
