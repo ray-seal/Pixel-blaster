@@ -15,8 +15,8 @@ const highScoreName = document.getElementById('highScoreName');
 const submitHighScore = document.getElementById('submitHighScore');
 const highScoreBtn = document.getElementById('highScoreBtn');
 const menuLeaderboardBtn = document.getElementById('menuLeaderboardBtn');
-const gameplayLeaderboard = document.getElementById('gameplayLeaderboard');
-const gameplayLeaderboardEntries = document.getElementById('gameplayLeaderboardEntries');
+const homeLeaderboard = document.getElementById('homeLeaderboard');
+const homeLeaderboardEntries = document.getElementById('homeLeaderboardEntries');
 const backToMenuFromScores = document.getElementById('backToMenuFromScores');
 
 // Neon leaderboard API. Database credentials stay server-side in Vercel.
@@ -138,7 +138,7 @@ async function addHighScore(name, score, distance) {
     globalHighScores.sort((a, b) => b.score - a.score);
     globalHighScores = globalHighScores.slice(0, 20);
     localStorage.setItem('globalHighScores', JSON.stringify(globalHighScores));
-    renderGameplayLeaderboard();
+    renderHomeLeaderboard();
     console.log('✓ High score saved locally:', highScoreEntry);
 
     if (!isOnline) {
@@ -212,27 +212,27 @@ async function fetchGlobalHighScores() {
             localStorage.setItem('globalHighScores', JSON.stringify(globalHighScores));
         }
         leaderboardConnectionStatus = 'connected';
-        renderGameplayLeaderboard();
+        renderHomeLeaderboard();
     } catch (err) {
         console.warn('Using cached leaderboard scores:', err.message);
         leaderboardConnectionStatus = 'error';
     }
 }
 
-function renderGameplayLeaderboard() {
-    if (!gameplayLeaderboardEntries) return;
+function renderHomeLeaderboard() {
+    if (!homeLeaderboardEntries) return;
     const leaders = [...globalHighScores]
         .sort((a, b) => Number(b.score) - Number(a.score))
         .slice(0, 3);
     if (leaders.length === 0) {
-        gameplayLeaderboardEntries.innerHTML = '<div class="gameplay-leaderboard-empty">NO SCORES YET</div>';
+        homeLeaderboardEntries.innerHTML = '<div class="home-leaderboard-empty">NO SCORES YET</div>';
         return;
     }
-    gameplayLeaderboardEntries.innerHTML = leaders.map((entry, index) => `
-        <div class="gameplay-leader-row rank-${index + 1}">
-            <span class="gameplay-rank">${['①', '②', '③'][index]}</span>
-            <span class="gameplay-pilot">${String(entry.name || '---').replace(/[^A-Z0-9]/gi, '').slice(0, 3)}</span>
-            <strong class="gameplay-points">${Math.max(0, Number(entry.score) || 0).toLocaleString()}</strong>
+    homeLeaderboardEntries.innerHTML = leaders.map((entry, index) => `
+        <div class="home-leader-row rank-${index + 1}">
+            <span class="home-leader-rank">${['①', '②', '③'][index]}</span>
+            <span class="home-leader-name">${String(entry.name || '---').replace(/[^A-Z0-9]/gi, '').slice(0, 3)}</span>
+            <strong class="home-leader-score">${Math.max(0, Number(entry.score) || 0).toLocaleString()}</strong>
         </div>
     `).join('');
 }
@@ -574,8 +574,8 @@ function startGame() {
     upgradesMenu.classList.remove('active');
     perkSelectionMenu.classList.remove('active');
     hud.classList.add('active');
-    if (gameplayLeaderboard) gameplayLeaderboard.classList.add('active');
-    renderGameplayLeaderboard();
+
+    renderHomeLeaderboard();
     fetchGlobalHighScores();
     updatePerkButtons();
 }
@@ -583,7 +583,7 @@ function startGame() {
 function gameOver() {
     window.gameState = 'gameOver';
     hud.classList.remove('active');
-    if (gameplayLeaderboard) gameplayLeaderboard.classList.remove('active');
+
     perkButtonsContainer.classList.remove('active');
     gameOverScreen.classList.add('active');
     finalScoreDisplay.textContent = `Score: ${Math.floor(score)}, Distance: ${Math.floor(distanceTraveled)}m`;
