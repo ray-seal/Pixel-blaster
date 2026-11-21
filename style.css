@@ -407,36 +407,27 @@ body {
 
 #perkButtons {
     position: absolute;
-    bottom: 60px;
+    bottom: max(18px, env(safe-area-inset-bottom));
     left: 50%;
     transform: translateX(-50%);
     display: none;
-    gap: 5px;
-    z-index: 5;
+    flex-direction: row;
+    gap: 8px;
+    z-index: 15;
     flex-wrap: wrap;
     justify-content: center;
-    max-width: 90%;
+    max-width: 94%;
+    pointer-events: auto;
 }
 
-/* Portrait mode: bottom center */
-@media (orientation: portrait) {
-    #perkButtons {
-        flex-direction: row;
-        bottom: 60px;
-        left: 50%;
-        top: auto;
-        transform: translateX(-50%);
-    }
-}
-
-/* Landscape mode: left side */
+/* Consumable abilities stay along the bottom in either orientation. */
 @media (orientation: landscape) {
     #perkButtons {
-        flex-direction: column;
-        left: 10px;
-        top: 50%;
-        bottom: auto;
-        transform: translateY(-50%);
+        flex-direction: row;
+        left: 50%;
+        top: auto;
+        bottom: max(12px, env(safe-area-inset-bottom));
+        transform: translateX(-50%);
     }
 }
 
@@ -445,40 +436,44 @@ body {
 }
 
 .perk-button {
-    background: rgba(0, 255, 0, 0.8);
-    color: #000;
-    border: 2px solid #00ff00;
-    padding: 4px 8px;
+    background: rgba(7, 18, 42, 0.94);
+    color: #36f5ff;
+    border: 1px solid #36f5ff;
+    padding: 7px 10px;
     font-family: 'Courier New', monospace;
-    font-size: 0.7rem;
+    font-size: 1rem;
     font-weight: bold;
     cursor: pointer;
-    border-radius: 3px;
-    box-shadow: 0 0 8px #00ff00;
-    transition: all 0.3s;
+    border-radius: 9px;
+    box-shadow: 0 0 12px rgba(54,245,255,.28);
+    transition: transform .15s, box-shadow .15s;
     white-space: nowrap;
-    min-width: 40px;
+    min-width: 48px;
+    min-height: 44px;
     text-align: center;
+    touch-action: manipulation;
 }
 
 .perk-button:hover {
-    background: rgba(0, 255, 0, 1);
-    box-shadow: 0 0 15px #00ff00;
-    transform: scale(1.1);
+    background: rgba(54,245,255,.2);
+    box-shadow: 0 0 16px rgba(54,245,255,.55);
 }
 
-.perk-button:active {
-    transform: scale(0.9);
-}
+.perk-button:active { transform: scale(.92); }
 
 .perk-button .count {
     display: inline-block;
-    background: #000;
-    color: #00ff00;
-    padding: 1px 4px;
-    border-radius: 3px;
-    margin-left: 5px;
-    font-size: 0.8rem;
+    background: #090d20;
+    color: #b7ff4a;
+    padding: 2px 5px;
+    border-radius: 5px;
+    margin-left: 4px;
+    font-size: .75rem;
+}
+
+.perk-button .perk-icon {
+    display: inline-block;
+    font-size: 1.1rem;
 }
 
 @media (max-width: 768px) {
