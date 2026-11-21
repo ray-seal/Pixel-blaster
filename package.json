@@ -1,0 +1,12 @@
+{
+  "name": "pixel-blaster",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Pixel Blaster PWA with a Neon PostgreSQL leaderboard",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.2"
+  }
+}
