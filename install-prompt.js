@@ -63,6 +63,22 @@
         }
     });
 
+    // Chrome/Android may not dispatch beforeinstallprompt in embedded browsers,
+    // or until its installability checks have completed. Still show useful
+    // manual instructions instead of silently offering no way to install.
+    if (/android/i.test(navigator.userAgent)) {
+        window.addEventListener('load', () => {
+            window.setTimeout(() => {
+                if (deferredInstallPrompt || promptBox.hidden === false) return;
+                if (sessionStorage.getItem('pixelBlasterInstallDismissed') === '1') return;
+                message.textContent = 'Open your browser menu (⋮) and choose “Install app” or “Add to Home screen”. If neither appears, open this page directly in Chrome.';
+                action.textContent = 'Got it';
+                action.onclick = hidePrompt;
+                showPrompt();
+            }, 2500);
+        }, { once: true });
+    }
+
     window.addEventListener('appinstalled', () => {
         deferredInstallPrompt = null;
         promptBox.hidden = true;
