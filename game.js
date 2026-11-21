@@ -1562,21 +1562,16 @@ function usePerk(perkId) {
     purchasedPerks[perkId]--;
     localStorage.setItem('purchasedPerks', JSON.stringify(purchasedPerks));
     
-    // Apply the perk
-    perk.apply();
-    
-    // Add to active effects
-    activeEffects.push({
-        lootType: {
-            id: perkId,
-            name: perk.name,
-            type: 'beneficial',
-            remove: perk.remove
-        },
-        startTime: Date.now(),
-        endTime: Date.now() + perk.duration
+    // Apply the perk, extending its timer if the same effect is already active.
+    applyLootEffect({
+        id: perkId,
+        name: perk.name,
+        type: 'beneficial',
+        duration: perk.duration,
+        apply: perk.apply,
+        remove: perk.remove
     });
-    
+
     updatePerkButtons();
 }
 
