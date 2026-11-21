@@ -71,6 +71,7 @@ window.addEventListener('online', () => {
     console.log('🌐 Network connection restored');
     isOnline = true;
     leaderboardConnectionStatus = 'unknown';
+    fetchGlobalHighScores();
     syncQueuedScores();
 });
 window.addEventListener('offline', () => {
