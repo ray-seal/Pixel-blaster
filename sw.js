@@ -1,8 +1,8 @@
 // Pixel Blaster service worker
 // Versioned shell cache + separate runtime cache. Never allow an old runtime
 // cache to shadow files from the current release.
-const CACHE_NAME = 'pixel-blaster-v18';
-const RUNTIME_CACHE = 'pixel-blaster-runtime-v10';
+const CACHE_NAME = 'pixel-blaster-v19';
+const RUNTIME_CACHE = 'pixel-blaster-runtime-v11';
 
 const CORE_ASSETS = [
   '/',
@@ -17,7 +17,9 @@ const CORE_ASSETS = [
   '/manifest.json',
   '/apple-touch-icon.png',
   '/icon-192.png',
-  '/icon-512.png'
+  '/icon-512.png',
+  '/icon-512.svg',
+  '/icon-512-maskable.svg'
 ];
 
 self.addEventListener('install', event => {
