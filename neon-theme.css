@@ -613,3 +613,12 @@ input:focus-visible, button:focus-visible {
     #homeLeaderboard { margin-top: 10px; padding: 9px 11px; }
     .home-leader-row { min-height: 25px; font-size: .74rem; }
 }
+
+
+/* Home screen: gameplay-only boost meter and perk quick-use controls stay hidden. */
+#gameContainer:has(#menu.active) #boostContainer,
+#gameContainer:has(#menu.active) #perkButtons {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
