@@ -4,7 +4,7 @@
   "private": true,
   "description": "Pixel Blaster PWA with a Neon PostgreSQL leaderboard",
   "engines": {
-    "node": ">=20"
+    "node": "22.x"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2"
