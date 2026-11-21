@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#070817">
     <meta name="description" content="Pixel Blaster - A retro side-scrolling space shooter game">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,8 +15,8 @@
     <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="ui-tweaks.css">
+    <link rel="stylesheet" href="neon-theme.css">
     <title>Pixel Blaster</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div id="gameContainer">
@@ -30,10 +30,12 @@
         </div>
         <canvas id="gameCanvas"></canvas>
         <div id="menu" class="screen active">
+            <p class="eyebrow">NEON SECTOR // ENDLESS COMBAT</p>
             <h1>PIXEL BLASTER</h1>
+            <p class="menu-tagline">SURVIVE THE VOID. OWN THE SCOREBOARD.</p>
             <button id="highScoreBtn" class="high-score-link" title="High Scores">🏆</button>
-            <p>Tap to start</p>
-            <button id="shopBtn" class="menu-button">Upgrades Shop</button>
+            <p>INITIATE RUN</p>
+            <button id="shopBtn" class="menu-button">WEAPON SYSTEMS</button>
             <p class="instructions">Tap/Click to thrust up<br>Hold to shoot</p>
             <div id="lootLegend">
                 <h2>LOOT DROPS</h2>
@@ -96,12 +98,14 @@
             </div>
         </div>
         <div id="highScoreTable" class="screen">
-            <h1>HIGH SCORES</h1>
+            <p class="eyebrow">PILOT RECORDS</p>
+            <h1>GLOBAL LEADERBOARD</h1>
             <div id="highScoreList" class="high-score-list"></div>
             <button id="backToMenuFromScores" class="menu-button back-button">Back to Menu</button>
         </div>
         <div id="upgradesMenu" class="screen">
-            <h1>UPGRADES SHOP</h1>
+            <p class="eyebrow">LOADOUT CONFIGURATION</p>
+            <h1>WEAPON SYSTEMS</h1>
             <p id="coinDisplay">Coins: 0</p>
             <div id="upgradesGrid">
                 <div class="upgrade-item" data-perk="speed2x">
@@ -145,6 +149,7 @@
             <button id="backToMenuBtn" class="menu-button back-button">Back to Menu</button>
         </div>
         <div id="perkSelectionMenu" class="screen">
+            <p class="eyebrow">PRE-FLIGHT CONFIGURATION</p>
             <h1>EQUIP PERKS</h1>
             <p class="selection-info">Select perks to start with:<br>1 Primary + 2 Secondary</p>
             <div id="selectionStatus">
