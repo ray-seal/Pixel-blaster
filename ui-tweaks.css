@@ -3,7 +3,7 @@
 /* Boost Bar Styles */
 #boostContainer {
     position: absolute;
-    bottom: 20px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
     left: 50%;
     transform: translateX(-50%);
     display: none; /* Hidden by default, shown only during gameplay */
@@ -46,7 +46,7 @@
 
 @media (max-width: 640px) {
     #boostContainer {
-        bottom: 80px;
+        bottom: calc(12px + env(safe-area-inset-bottom));
     }
 }
 
@@ -109,3 +109,31 @@
         font-size: 0.8rem;
     }
 }
+
+/* Native install invitation for Android and iOS browsers */
+.install-prompt[hidden] { display: none !important; }
+.install-prompt {
+    position: fixed; z-index: 1000;
+    left: max(12px, env(safe-area-inset-left));
+    right: max(12px, env(safe-area-inset-right));
+    top: max(12px, env(safe-area-inset-top));
+    display: flex; justify-content: center; pointer-events: none;
+}
+.install-prompt-card {
+    width: min(100%, 520px); display: grid; grid-template-columns: auto 1fr;
+    gap: 10px 12px; align-items: center; padding: 14px;
+    border: 1px solid rgba(54,245,255,.65); border-radius: 16px;
+    background: rgba(5,10,28,.96); color: #f4f7ff;
+    box-shadow: 0 0 24px rgba(54,245,255,.22), 0 12px 36px rgba(0,0,0,.45);
+    pointer-events: auto; font-family: inherit;
+}
+.install-prompt-icon { font-size: 30px; grid-row: span 2; }
+.install-prompt-copy strong { color: #36f5ff; font-size: 1rem; }
+.install-prompt-copy p { margin: 4px 0 0; color: #d8e1ff; font-size: .88rem; line-height: 1.35; }
+.install-prompt-actions { grid-column: 2; display: flex; gap: 8px; flex-wrap: wrap; }
+.install-prompt-actions button {
+    border: 1px solid #36f5ff; border-radius: 8px; padding: 8px 12px;
+    background: linear-gradient(100deg,#8a43ff,#f02bba); color: white;
+    font-weight: bold; cursor: pointer;
+}
+.install-prompt-actions #dismissInstallBtn { background: transparent; color: #c7d0e8; border-color: rgba(199,208,232,.35); }
