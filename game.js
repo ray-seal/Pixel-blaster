@@ -719,13 +719,13 @@ function dropEnemyRewards(enemy) {
     killsWithoutCoinDrop++;
     killsWithoutLootDrop++;
 
-    if (killsWithoutCoinDrop >= 4 || Math.random() < 0.70) {
+    if (killsWithoutCoinDrop >= 4 || Math.random() < 0.50) {
         const isRare = Math.random() < 0.10;
         coins_on_screen.push(createCoin(enemy.x, enemy.y, isRare));
         killsWithoutCoinDrop = 0;
     }
 
-    if (killsWithoutLootDrop >= 7 || Math.random() < 0.30) {
+    if (killsWithoutLootDrop >= 7 || Math.random() < 0.25) {
         lootDrops.push(createLootDrop(enemy.x, enemy.y));
         killsWithoutLootDrop = 0;
     }
