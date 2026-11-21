@@ -225,14 +225,14 @@ function renderHomeLeaderboard() {
         .sort((a, b) => Number(b.score) - Number(a.score))
         .slice(0, 3);
     if (leaders.length === 0) {
-        homeLeaderboardEntries.innerHTML = '<div class="gameplay-leaderboard-empty">NO SCORES YET</div>';
+        homeLeaderboardEntries.innerHTML = '<div class="home-leaderboard-empty">NO SCORES YET</div>';
         return;
     }
     homeLeaderboardEntries.innerHTML = leaders.map((entry, index) => `
-        <div class="gameplay-leader-row rank-${index + 1}">
-            <span class="gameplay-rank">${['①', '②', '③'][index]}</span>
-            <span class="gameplay-pilot">${String(entry.name || '---').replace(/[^A-Z0-9]/gi, '').slice(0, 3)}</span>
-            <strong class="gameplay-points">${Math.max(0, Number(entry.score) || 0).toLocaleString()}</strong>
+        <div class="home-leader-row rank-${index + 1}">
+            <span class="home-leader-rank">${['①', '②', '③'][index]}</span>
+            <span class="home-leader-name">${String(entry.name || '---').replace(/[^A-Z0-9]/gi, '').slice(0, 3)}</span>
+            <strong class="home-leader-score">${Math.max(0, Number(entry.score) || 0).toLocaleString()}</strong>
         </div>
     `).join('');
 }
