@@ -30,13 +30,19 @@
         </div>
         <canvas id="gameCanvas"></canvas>
         <div id="menu" class="screen active">
-            <p class="eyebrow">NEON SECTOR // ENDLESS COMBAT</p>
-            <h1>PIXEL BLASTER</h1>
-            <p class="menu-tagline">SURVIVE THE VOID. OWN THE SCOREBOARD.</p>
-            <button id="highScoreBtn" class="high-score-link" title="High Scores">🏆</button>
-            <p>INITIATE RUN</p>
-            <button id="shopBtn" class="menu-button">WEAPON SYSTEMS</button>
-            <p class="instructions">Tap/Click to thrust up<br>Hold to shoot</p>
+            <div class="title-orbit" aria-hidden="true"><span></span><i></i><b></b></div>
+            <div class="title-lockup">
+                <p class="eyebrow">ARCADE FLIGHT SYSTEMS <span>// SECTOR 07</span></p>
+                <h1><span>PIXEL</span><strong>BLASTER</strong></h1>
+                <p class="menu-tagline">SURVIVE THE VOID. OWN THE SCOREBOARD.</p>
+            </div>
+            <button id="highScoreBtn" class="high-score-link" title="Global leaderboard" aria-label="Global leaderboard">🏆</button>
+            <div class="menu-command">
+                <div class="command-status"><span class="status-dot"></span> PILOT READY <span class="command-divider">/</span> SYSTEMS ONLINE</div>
+                <div class="start-prompt"><span class="start-arrow">▶</span><span>INITIATE RUN</span><small>TAP TO LAUNCH</small></div>
+                <button id="shopBtn" class="menu-button"><span class="button-icon">✦</span> WEAPON SYSTEMS <span class="button-arrow">›</span></button>
+                <p class="instructions"><span>TO FLY</span> Tap / click to thrust <i>•</i> Hold to shoot</p>
+            </div>
             <div id="lootLegend">
                 <h2>LOOT DROPS</h2>
                 <div class="legend-section">
@@ -82,8 +88,9 @@
                 </div>
             </div>
         </div>
-        <div id="gameOver" class="screen">
-            <h1>GAME OVER</h1>
+        <div id="gameOver" class="screen game-over-screen">
+            <p class="eyebrow">FLIGHT RECORDER // RUN TERMINATED</p>
+            <h1>GAME <span>OVER</span></h1>
             <p id="finalScore">Score: 0</p>
             <p id="highScore">High Score: 0</p>
             <div id="newHighScorePrompt" style="display: none;">
@@ -97,15 +104,17 @@
                 <button id="retryBtn" class="menu-button">Retry</button>
             </div>
         </div>
-        <div id="highScoreTable" class="screen">
-            <p class="eyebrow">PILOT RECORDS</p>
-            <h1>GLOBAL LEADERBOARD</h1>
+        <div id="highScoreTable" class="screen leaderboard-screen">
+            <p class="eyebrow">NEON SECTOR // PILOT RECORDS</p>
+            <h1>GLOBAL <span>LEADERBOARD</span></h1>
+            <p class="screen-subtitle">THE BEST FLIGHTS IN THE GALAXY</p>
             <div id="highScoreList" class="high-score-list"></div>
             <button id="backToMenuFromScores" class="menu-button back-button">Back to Menu</button>
         </div>
-        <div id="upgradesMenu" class="screen">
-            <p class="eyebrow">LOADOUT CONFIGURATION</p>
-            <h1>WEAPON SYSTEMS</h1>
+        <div id="upgradesMenu" class="screen shop-screen">
+            <p class="eyebrow">HANGAR 07 // EQUIPMENT BAY</p>
+            <h1>WEAPON <span>SYSTEMS</span></h1>
+            <p class="screen-subtitle">UPGRADE YOUR SHIP. EXTEND YOUR RUN.</p>
             <p id="coinDisplay">Coins: 0</p>
             <div id="upgradesGrid">
                 <div class="upgrade-item" data-perk="speed2x">
@@ -148,9 +157,10 @@
             <button id="equipPerksBtn" class="menu-button">Equip Perks</button>
             <button id="backToMenuBtn" class="menu-button back-button">Back to Menu</button>
         </div>
-        <div id="perkSelectionMenu" class="screen">
+        <div id="perkSelectionMenu" class="screen loadout-screen">
             <p class="eyebrow">PRE-FLIGHT CONFIGURATION</p>
-            <h1>EQUIP PERKS</h1>
+            <h1>EQUIP <span>PERKS</span></h1>
+            <p class="screen-subtitle">CHOOSE YOUR ADVANTAGE BEFORE LAUNCH</p>
             <p class="selection-info">Select perks to start with:<br>1 Primary + 2 Secondary</p>
             <div id="selectionStatus">
                 <div class="status-item">
