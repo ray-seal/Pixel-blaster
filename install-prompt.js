@@ -6,6 +6,8 @@
     if (!promptBox || !message || !action || !dismiss) return;
 
     let deferredInstallPrompt = null;
+    let promptPending = false;
+    let promptMonitor = null;
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
         window.navigator.standalone === true;
 
@@ -16,13 +18,43 @@
     const isSafari = /safari/i.test(navigator.userAgent) &&
         !/crios|fxios|edgios|opios/i.test(navigator.userAgent);
 
-    function showPrompt() {
-        if (sessionStorage.getItem('pixelBlasterInstallDismissed') === '1') return;
+    function isPlaying() {
+        return window.gameState === 'playing';
+    }
+
+    function showPromptWhenSafe() {
+        if (!promptPending || isPlaying()) return;
+        if (sessionStorage.getItem('pixelBlasterInstallDismissed') === '1') {
+            promptPending = false;
+            stopPromptMonitor();
+            return;
+        }
         promptBox.hidden = false;
+        promptPending = false;
+        stopPromptMonitor();
+    }
+
+    function queuePrompt() {
+        if (sessionStorage.getItem('pixelBlasterInstallDismissed') === '1') return;
+        promptPending = true;
+        showPromptWhenSafe();
+        if (promptPending && !promptMonitor) {
+            // Wait until the player returns to a menu or game-over screen.
+            promptMonitor = window.setInterval(showPromptWhenSafe, 500);
+        }
+    }
+
+    function stopPromptMonitor() {
+        if (promptMonitor) {
+            window.clearInterval(promptMonitor);
+            promptMonitor = null;
+        }
     }
 
     function hidePrompt() {
         promptBox.hidden = true;
+        promptPending = false;
+        stopPromptMonitor();
         sessionStorage.setItem('pixelBlasterInstallDismissed', '1');
     }
 
@@ -34,49 +66,49 @@
             : 'To install Pixel Blaster on iPhone or iPad, open this page in Safari, tap Share, then choose “Add to Home Screen”.';
         action.textContent = isSafari ? 'Got it' : 'How to install';
         action.addEventListener('click', hidePrompt);
-        window.addEventListener('load', () => window.setTimeout(showPrompt, 900), { once: true });
-        return;
-    }
+        window.addEventListener('load', () => window.setTimeout(queuePrompt, 900), { once: true });
+    } else {
+        window.addEventListener('beforeinstallprompt', event => {
+            // Preserve the native install event, but never interrupt an active run.
+            event.preventDefault();
+            deferredInstallPrompt = event;
+            action.textContent = 'Install';
+            message.textContent = 'Add Pixel Blaster to your home screen for quick access and a full-screen game.';
+            queuePrompt();
+        });
 
-    window.addEventListener('beforeinstallprompt', event => {
-        // Keep the browser's native install sheet available for our button.
-        event.preventDefault();
-        deferredInstallPrompt = event;
-        action.textContent = 'Install';
-        message.textContent = 'Add Pixel Blaster to your home screen for quick access and a full-screen game.';
-        showPrompt();
-    });
-
-    action.addEventListener('click', async () => {
-        if (!deferredInstallPrompt) return;
-        const installEvent = deferredInstallPrompt;
-        deferredInstallPrompt = null;
-        promptBox.hidden = true;
-        try {
-            await installEvent.prompt();
-            const choice = await installEvent.userChoice;
-            if (choice && choice.outcome === 'accepted') {
-                sessionStorage.setItem('pixelBlasterInstallDismissed', '1');
+        action.addEventListener('click', async () => {
+            if (!deferredInstallPrompt) {
+                hidePrompt();
+                return;
             }
-        } catch (error) {
-            console.warn('Pixel Blaster install prompt failed:', error);
-        }
-    });
+            const installEvent = deferredInstallPrompt;
+            deferredInstallPrompt = null;
+            promptBox.hidden = true;
+            try {
+                await installEvent.prompt();
+                const choice = await installEvent.userChoice;
+                if (choice && choice.outcome === 'accepted') {
+                    sessionStorage.setItem('pixelBlasterInstallDismissed', '1');
+                }
+            } catch (error) {
+                console.warn('Pixel Blaster install prompt failed:', error);
+            }
+        });
 
-    // Chrome/Android may not dispatch beforeinstallprompt in embedded browsers,
-    // or until its installability checks have completed. Still show useful
-    // manual instructions instead of silently offering no way to install.
-    if (/android/i.test(navigator.userAgent)) {
-        window.addEventListener('load', () => {
-            window.setTimeout(() => {
-                if (deferredInstallPrompt || promptBox.hidden === false) return;
-                if (sessionStorage.getItem('pixelBlasterInstallDismissed') === '1') return;
-                message.textContent = 'Open your browser menu (⋮) and choose “Install app” or “Add to Home screen”. If neither appears, open this page directly in Chrome.';
-                action.textContent = 'Got it';
-                action.onclick = hidePrompt;
-                showPrompt();
-            }, 2500);
-        }, { once: true });
+        // Some Android browsers never dispatch beforeinstallprompt. Queue
+        // manual instructions and show them only after the run has ended.
+        if (/android/i.test(navigator.userAgent)) {
+            window.addEventListener('load', () => {
+                window.setTimeout(() => {
+                    if (deferredInstallPrompt || !promptBox.hidden) return;
+                    message.textContent = 'Open your browser menu (⋮) and choose “Install app” or “Add to Home screen”. If neither appears, open this page directly in Chrome.';
+                    action.textContent = 'Got it';
+                    action.onclick = hidePrompt;
+                    queuePrompt();
+                }, 2500);
+            }, { once: true });
+        }
     }
 
     window.addEventListener('appinstalled', () => {
