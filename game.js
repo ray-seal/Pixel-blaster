@@ -1242,6 +1242,7 @@ function gameLoop(timestamp) {
         
         // Update (all update functions now use window.deltaTime for consistent speed)
         updatePlayer();
+        updateTunnels(); // Keep distance-gate score milestones; gates are no longer drawn or collidable.
         updateEnemies();
         updateBullets();
         updateEnemyBullets();
