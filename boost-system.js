@@ -1,6 +1,6 @@
 (function () {
     if (typeof window === 'undefined') return;
-    const KEYS_TO_PRESERVE = ['coins','highScore','globalHighScores','queuedScores','purchasedPerks','equippedPerks'];
+    const KEYS_TO_PRESERVE = ['coins','highScore','globalHighScores','queuedScores','purchasedPerks'];
 
     function restoreLocalStateFallback() {
         try {
