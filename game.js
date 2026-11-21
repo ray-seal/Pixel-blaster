@@ -387,6 +387,8 @@ let lootDrops = [];
 let obstacles = []; // Random obstacles spawned by loot effects
 let enemyBullets = []; // Bullets fired by shooting enemies
 let coins_on_screen = []; // Coin pickups
+let killsWithoutCoinDrop = 0;
+let killsWithoutLootDrop = 0;
 
 // Active effects tracking
 let activeEffects = [];
@@ -560,6 +562,8 @@ function startGame() {
     powerups = [];
     lootDrops = [];
     obstacles = [];
+    killsWithoutCoinDrop = 0;
+    killsWithoutLootDrop = 0;
     activeEffects = [];
     nextTunnelX = canvas.width;
     lastFrameTime = 0; // Reset delta time tracking
@@ -708,6 +712,23 @@ function createLootDrop(x, y) {
         lootType: lootType,
         rotation: 0 // For animation
     };
+}
+
+// Enemy rewards: increase pickup frequency and guard against long unlucky runs.
+function dropEnemyRewards(enemy) {
+    killsWithoutCoinDrop++;
+    killsWithoutLootDrop++;
+
+    if (killsWithoutCoinDrop >= 4 || Math.random() < 0.70) {
+        const isRare = Math.random() < 0.10;
+        coins_on_screen.push(createCoin(enemy.x, enemy.y, isRare));
+        killsWithoutCoinDrop = 0;
+    }
+
+    if (killsWithoutLootDrop >= 7 || Math.random() < 0.30) {
+        lootDrops.push(createLootDrop(enemy.x, enemy.y));
+        killsWithoutLootDrop = 0;
+    }
 }
 
 /**
@@ -965,11 +986,7 @@ function checkCollisions() {
             // Shield kills enemy on contact
             if (player.hasShield) {
                 score += enemy.points;
-                // Drop coin chance
-                if (Math.random() < 0.5) {
-                    const isRare = Math.random() < 0.1;
-                    coins_on_screen.push(createCoin(enemy.x, enemy.y, isRare));
-                }
+                dropEnemyRewards(enemy);
             } else {
                 takeDamage();
             }
@@ -1054,16 +1071,7 @@ function checkCollisions() {
             if (isColliding(bullet, enemy)) {
                 particles.push(...createParticle(enemy.x, enemy.y, enemy.color));
                 
-                // Drop coin (50% chance, 10% rare)
-                if (Math.random() < 0.5) {
-                    const isRare = Math.random() < 0.1;
-                    coins_on_screen.push(createCoin(enemy.x, enemy.y, isRare));
-                }
-                
-                // Random chance to drop loot (20% chance)
-                if (Math.random() < 0.2) {
-                    lootDrops.push(createLootDrop(enemy.x, enemy.y));
-                }
+                dropEnemyRewards(enemy);
                 
                 score += enemy.points; // Use enemy points
                 enemies.splice(j, 1);
