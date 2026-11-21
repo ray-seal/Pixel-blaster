@@ -5,15 +5,19 @@
 // IMPORTANT: Increment version number (v4 -> v5 -> v6, etc.) for EVERY new deployment
 // This ensures users get the latest code without manual cache clearing
 // The version change triggers update detection in the main app (game.js)
-const CACHE_NAME = 'pixel-blaster-v6';
-const RUNTIME_CACHE = 'pixel-blaster-runtime-v6';
+const CACHE_NAME = 'pixel-blaster-v8';
+const RUNTIME_CACHE = 'pixel-blaster-runtime-v7';
 
 // All assets needed for offline play
 const urlsToCache = [
   '/',
   '/index.html',
   '/style.css',
+  '/ui-tweaks.css',
+  '/neon-theme.css',
   '/game.js',
+  '/edge-hazards.js',
+  '/boost-system.js',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png'
@@ -66,12 +70,11 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Allow Supabase API calls to pass through (don't cache)
-  // Use catch to handle network errors gracefully
-  if (url.origin.includes('supabase.co') || url.origin.includes('jsdelivr.net')) {
+  // Leaderboard API calls must always reach the server and must never be cached.
+  if (url.origin === location.origin && url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(request).catch(error => {
-        console.error('Service Worker: Network request failed for', request.url, error);
+        console.error('Service Worker: API request failed for', request.url, error);
         // Return a basic error response instead of letting it fail silently
         return new Response(JSON.stringify({ error: 'Network request failed' }), {
           status: 503,
