@@ -257,32 +257,14 @@ NEW_LOOT: {
 - **drawActiveEffects()**: Shows active effect indicators with countdown
 - **renderLootLegendIcons()**: Renders loot type icons on menu screen legend
 
-### Perk Selection System Architecture
+### Consumable Perk Inventory
 
-The pre-game perk selection system allows players to equip perks before starting:
-
-- **Perk Categories**: 
-  - `primary`: Defensive perks (Shield, Invincibility) - max 1 equipped
-  - `secondary`: Offensive/utility perks (Speed, Rapid Fire, Coin Magnet, Enemy Reducer) - max 2 equipped
-- **Storage**:
-  - `purchasedPerks`: Object tracking owned perks and quantities (localStorage)
-  - `equippedPerks`: Array of selected perk IDs to apply at game start (localStorage)
-- **Key Functions**:
-  - `openPerkSelection()`: Opens the perk selection screen from shop
-  - `updatePerkSelection()`: Renders available perks and updates selection status
-  - `togglePerkSelection(perkId)`: Handles equip/unequip with limit validation
-  - `startGame()`: Applies equipped perks automatically when game begins
-- **UI Components**:
-  - Selection status display (Primary: 1/1, Secondary: 2/2)
-  - Error messages for exceeded limits
-  - Visual indicators for selected perks (green glow)
-  - Quantity badges showing owned count
-- **Validation**: Enforces 1 primary + 2 secondary limit with explanatory error messages
-- **applyLootEffect()**: Applies or extends an effect duration
-- **updateLootEffects()**: Manages effect timers and removal
-- **drawLootDrops()**: Renders loot with visual distinction
-- **drawActiveEffects()**: Shows active effect indicators with countdown
-- **renderLootLegendIcons()**: Renders loot type icons on menu screen legend
+- `purchasedPerks`: localStorage object tracking the remaining quantity of each purchased perk.
+- Every successful shop purchase adds one to the existing quantity.
+- Perk icons appear in the gameplay HUD only while the player has stock.
+- Tapping an icon consumes exactly one use and activates its timed effect.
+- An icon disappears when its quantity reaches zero.
+- No pre-flight loadout or automatic perk activation is used.
 
 ## License
 
