@@ -99,9 +99,12 @@ function resizeCanvas() {
     // Use the visible viewport, which can differ from window.innerHeight
     // on Android when system/browser bars are present.
     const viewport = window.visualViewport;
-    const viewportWidth = Math.round(viewport?.width || window.innerWidth);
-    const viewportHeight = Math.round(viewport?.height || window.innerHeight);
+    const viewportWidth = Math.round(viewport?.width || document.documentElement.clientWidth || window.innerWidth);
+    const viewportHeight = Math.round(viewport?.height || document.documentElement.clientHeight || window.innerHeight);
     const isPortrait = viewportHeight > viewportWidth;
+
+    // Keep the drawing surface aligned with the actual visible browser viewport.
+    // CSS scales the canvas to the container; these dimensions set its drawing resolution.
 
     if (isPortrait) {
         // Portrait mode: limit width, allow more height
